@@ -20,8 +20,8 @@ An initial linear vesting contract with a 6 month cliff and a total vesting peri
 ## Contract Addresses
 | Contract                   | Address                                                                 |
 | :------------------------- | :---------------------------------------------------------------------: |
-| `DAOUpgradeable`           |  |
-| `CustomUpgradeableProxy`   |  |
-| `TCR`                      |  |
-| `Claim`                    |  |
-| `Vesting`                  |  |
+| `DAOUpgradeable`           | https://etherscan.io/address/0x515f2815c950c8385c1c3c30b63adf3207aa259a |
+| `CustomUpgradeableProxy`   | https://etherscan.io/address/0xa84918f3280d488eb3369cb713ec53ce386b6cba |
+| `TCR`                      | https://etherscan.io/address/0x9C4A4204B79dd291D6b6571C5BE8BbcD0622F050 |
+| `Claim`                    | https://etherscan.io/address/0x2Ad3cf980eB7Cd382ebaf12C7C8D995bfEa17A11 |
+| `Vesting`                  | https://etherscan.io/address/0x2B79E11984514Ece5B2Db561F49c0466cC7659EA |
