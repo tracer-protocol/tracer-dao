@@ -52,10 +52,18 @@ contract("DAOUpgradable", async (accounts) => {
                 {
                     type: "bool",
                     name: "isFixed",
+                },
+                {
+                    type: "uint256",
+                    name: "cliffWeeks",
+                },
+                {
+                    type: "uint256",
+                    name: "vestingWeeks",
                 }
             ],
         },
-        [accounts[0], web3.utils.toWei("5"), true]
+        [accounts[0], web3.utils.toWei("5"), true, 26, 156]
     )
 
     const setCoolingOffData = web3.eth.abi.encodeFunctionCall(
@@ -493,7 +501,7 @@ contract("DAOUpgradable", async (accounts) => {
             await gov.vote(0, true, ether("50"), { from: accounts[1] })
             await time.increase(threeDays + 1)
             await gov.execute(0)
-            let vestingDetails = await vesting.getVesting(accounts[0])
+            let vestingDetails = await vesting.getVesting(accounts[0], 0)
             assert.equal((web3.utils.toWei("5")).toString(), vestingDetails[0].toString())
         })
     })

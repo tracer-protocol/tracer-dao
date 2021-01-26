@@ -13,26 +13,28 @@ interface IVesting {
     function setVestingSchedule(
         address account,
         uint256 amount,
-        bool isFixed
+        bool isFixed,
+        uint256 cliffWeeks,
+        uint256 vestingWeeks
     ) external;
 
     /**
      * @notice allows users to claim vested tokens if the cliff time has passed
      */
-    function claim() external;
+    function claim(uint256 proposalId) external;
 
     /**
      * @notice Allows a vesting schedule to be cancelled.
      * @dev Any outstanding tokens are returned to the system.
      * @param account the account of the user whos vesting schedule is being cancelled.
      */
-    function cancelVesting(address account) external;
+    function cancelVesting(address account, uint256 proposalId) external;
 
     /**
      * @notice returns the total amount and total claimed amount of a users vesting schedule.
      * @param account the user to retrieve the vesting schedule for.
      */
-    function getVesting(address account)
+    function getVesting(address account, uint256 proposalId)
         external
         view
         returns (uint256, uint256);
