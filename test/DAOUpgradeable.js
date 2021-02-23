@@ -4,6 +4,7 @@ const TCR = artifacts.require("TracerToken")
 const DAOUpgradeable = artifacts.require("TracerDAO")
 const DAOEmpty = artifacts.require("DAOEmpty")
 const DAOMock = artifacts.require("DAOMock")
+const MultisigDAOUpgradeable = artifacts.require("TracerMultisigDAO")
 const SelfUpgradeableProxy = artifacts.require("CustomUpgradeableProxy")
 const Vesting = artifacts.require("TokenVesting")
 
@@ -75,8 +76,10 @@ contract("DAOUpgradable", async (accounts) => {
     beforeEach(async () => {
         // Stateless implementations
         daoImpl = await DAOUpgradeable.new()
+        multisigDaoImpl = await MultisigDAOUpgradeable.new()
         daoMockImpl = await DAOMock.new()
         daoEmptyImpl = await DAOEmpty.new()
+        console.log("0")
 
         //Deploy a test token
         govToken = await TCR.new(ether("80000000000"), accounts[0]) // 80 billion
@@ -98,14 +101,18 @@ contract("DAOUpgradable", async (accounts) => {
             },
             [govToken.address, 10, 2*day, 2*day, 3*day, 7*day, ether("1"), 2]
         )
+        console.log("1")
 
 
         for (var i = 1; i < 6; i++) {
             await govToken.transfer(accounts[i], ether("100"), { from: accounts[0] })
         }
+        console.log("2")
 
         proxy = await SelfUpgradeableProxy.new(daoImpl.address, govInitData)
+        console.log("3")
         gov = await DAOUpgradeable.at(proxy.address)
+        console.log("4")
     })
 
     describe("upgradeTo()", () => {
@@ -130,6 +137,49 @@ contract("DAOUpgradable", async (accounts) => {
 
             const govEmpty = await DAOEmpty.at(proxy.address)
             assert.equal(await govEmpty.name(), "DAOEmpty")
+        })
+
+        it("DAOMock", async () => {
+            const proxy = await SelfUpgradeableProxy.new(daoImpl.address, govInitData)
+            const govMock = await DAOMock.at(proxy.address)
+            assert.equal(await multisig.name(), "MultisigDAOUpgradeable")
+
+            multisigInitData = web3.eth.abi.encodeFunctionCall(
+                {
+                    name: "initialize",
+                    type: "function",
+                    inputs: [
+                        { type: "address", name: "_govToken" },
+                        { type: "uint32", name: "_maxProposalTargets" },
+                        { type: "uint32", name: "_warmUp" },
+                        { type: "uint32", name: "_coolingOff" },
+                        { type: "uint32", name: "_proposalDuration" },
+                        { type: "uint32", name: "_lockDuration" },
+                        { type: "uint96", name: "_proposalThreshold" },
+                        { type: "uint8", name: "_quorumDivisor" },
+                        { type: "address", name: "_multisig" }
+                    ],
+                },
+                [govToken.address, 10, 2*day, 2*day, 3*day, 7*day, ether("1"), 2, accounts[1]]
+            )
+
+            const upgradeToData = web3.eth.abi.encodeFunctionCall(
+                {
+                    name: "upgradeTo",
+                    type: "function",
+                    inputs: [
+                        { type: "address", name: "newImplementation" }
+                    ],
+                },
+                [multisigDaoImpl.address]
+            )
+
+            await govMock.propose([govMock.address], [upgradeToData])
+            await govMock.execute(0);
+
+            const multisigDao = await MultisigDAOUpgradeable.at(proxy.address)
+            assert.equal(await multisigDao.name(), "MultisigDAOUpgradeable")
+            await expectRevert(multisigDao.multisigPropose([], []), "DAO: 0 targets")
         })
 
         it("DAO", async () => {
