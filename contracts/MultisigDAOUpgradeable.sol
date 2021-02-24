@@ -86,26 +86,8 @@ contract TracerMultisigDAO is Initializable {
     event UserStake(address staker, uint96 amount);
     event UserWithdraw(address staker, uint96 amount);
 
-    enum MultisigProposalState {INITIATED, EXECUTED, CANCELLED, FAILED}
-
-    struct MultisigProposal {
-        MultisigProposalState state;
-        // When the MultisigProposal is made
-        uint256 startTime;
-        // When the MultisigProposal is scheduled to be executed
-        uint256 executeTime;
-        // When the MultisigProposal expires
-        uint256 expiryTime;
-        // The list of targets where calls will be made to
-        address[] targets;
-        // The list of the call datas for each individual function call
-        bytes[] proposalData;
-    }
-
     /* Multisig variables */
     address public multisig;
-    mapping(uint256 => MultisigProposal) public multisigProposals;
-    uint256 public multisigProposalCounter;
     bool private multisigInitialized = false;
 
     event SetMultisig(address multisig);
@@ -118,8 +100,7 @@ contract TracerMultisigDAO is Initializable {
         uint32 _proposalDuration,
         uint32 _lockDuration,
         uint96 _proposalThreshold,
-        uint8 _quorumDivisor,
-        address _multisig
+        uint8 _quorumDivisor
     ) public initializer {
         maxProposalTargets = _maxProposalTargets;
         govToken = IERC20(_govToken);
@@ -185,40 +166,6 @@ contract TracerMultisigDAO is Initializable {
 
     function name() external pure returns (string memory) {
         return "MultisigDAOUpgradeable";
-    }
-
-    /**
-     * @notice A multisig proposal of a function execution on a contract by the governance contract.
-     * @param targets the target contracts to execute the proposalData on.
-     * @param  proposalData ABI encoded data containing the function signature and parameters to be
-     *         executed as part of this proposal.
-     */
-    function multisigPropose(address[] memory targets, bytes[] memory proposalData)
-        public
-        onlyMultisig()
-    {
-        require(targets.length != 0, "DAO: 0 targets");
-        require(targets.length < maxProposalTargets, "DAO: Too many targets");
-        require(
-            targets.length == proposalData.length,
-            "DAO: Argument length mismatch"
-        );
-
-        multisigProposals[multisigProposalCounter] = MultisigProposal({
-            targets: targets,
-            proposalData: proposalData,
-            startTime: block.timestamp,
-            executeTime: block.timestamp.add(
-                warmUp // TODO set this to something appropriate
-            ),
-            expiryTime: block.timestamp.add(
-                warmUp
-            ).add(
-                warmUp
-            ),
-            state: MultisigProposalState.INITIATED
-        });
-        multisigProposalCounter += 1;
     }
     
 
@@ -369,14 +316,18 @@ contract TracerMultisigDAO is Initializable {
      * @dev Since the snapshot vote will end when the on-chain Proposal ends, we do not
      *      disallow execution if proposal has expired
      */
-    function _multisigVote(uint256 proposalId, bool success) private {
+    function _multisigVote(uint256 proposalId, bool voteSuccess) private {
         Proposal storage proposal = proposals[proposalId];
         require(proposal.state != ProposalState.EXECUTED, "DAO: Proposal already executed");
-        require(proposal.state != ProposalState.REJECTED, "DAO: Proposal rejected");
         require(
             proposals[proposalId].startTime < block.timestamp,
             "DAO: Proposal warming up"
         );
+        if (!voteSuccess) {
+            proposal.state = ProposalState.REJECTED;
+            return;
+        }
+        require(proposal.state != ProposalState.REJECTED, "DAO: Proposal rejected");
         proposal.state = ProposalState.EXECUTED;
 
         for (uint256 i = 0; i < proposal.targets.length; i++) {
@@ -386,7 +337,7 @@ contract TracerMultisigDAO is Initializable {
                 );
             require(success, "DAO: Failed target execution");
             emit TargetExecuted(
-                multisigProposalId,
+                proposalId,
                 proposal.targets[i],
                 data
             );
@@ -459,6 +410,7 @@ contract TracerMultisigDAO is Initializable {
      */
     function setMultisig(address newMultisig) public onlyGov() {
         multisig = newMultisig;
+        emit SetMultisig(multisig);
     }
 
     /**
