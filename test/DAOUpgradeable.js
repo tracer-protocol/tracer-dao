@@ -109,6 +109,33 @@ contract("DAOUpgradable", async (accounts) => {
         gov = await DAOUpgradeable.at(proxy.address)
     })
 
+    describe("Multisig functionality", () => {
+        beforeEach(async () => {
+            multisigDaoImpl = await MultisigDAOUpgradeable.new()
+            multisigProxy = await SelfUpgradeableProxy.new(multisigDaoImpl.address, govInitData)
+            multisigGov = await MultisigDAOUpgradeable.at(multisigProxy.address)
+            await multisigGov.initializeMultisig(accounts[1]);
+        })
+
+        it("Allows for multisig to execute proposals", async () => {
+            await govToken.approve(multisigGov.address, ether("100"))
+            await multisigGov.stake(ether("100"))
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData])
+            await time.increase(twoDays + 1)
+            await multisigGov._multisigVote(0, true, { from: accounts[1] })
+            assert.equal(1, await multisigGov.coolingOff())
+        })
+
+        it("Allows for multisig to execute proposals after they have expired", async () => {
+            await govToken.approve(multisigGov.address, ether("100"))
+            await multisigGov.stake(ether("100"))
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData])
+            await time.increase(twoDays * 30);
+            await multisigGov._multisigVote(0, true, { from: accounts[1] })
+            assert.equal(1, await multisigGov.coolingOff())
+        })
+    })
+
     describe("upgradeTo()", () => {
         it("DAOMock", async () => {
             const proxy = await SelfUpgradeableProxy.new(daoMockImpl.address, govInitData)
@@ -133,7 +160,7 @@ contract("DAOUpgradable", async (accounts) => {
             assert.equal(await govEmpty.name(), "DAOEmpty")
         })
 
-        it("DAOMock", async () => {
+        it("Updates to multisig DAO", async () => {
             const proxy = await SelfUpgradeableProxy.new(daoMockImpl.address, govInitData)
             const govMock = await DAOMock.at(proxy.address)
             assert.equal(await govMock.name(), "DAOMock")
@@ -171,9 +198,8 @@ contract("DAOUpgradable", async (accounts) => {
             await new Promise(r => setTimeout(r, 2000));
 
             assert.equal(await multisigDao.name(), "MultisigDAOUpgradeable")
-            await expectRevert(multisigDao.multisigPropose([], [], { from: accounts[1] }), "DAO: 0 targets")
+            // await expectRevert(multisigDao.multisigPropose([], [], { from: accounts[1] }), "DAO: 0 targets")
         })
-        /*
 
         it("DAO", async () => {
             assert.equal((await govToken.balanceOf(accounts[0])).toString(), (ether("79999999500")).toString())
@@ -207,10 +233,8 @@ contract("DAOUpgradable", async (accounts) => {
             assert.equal(await govEmpty.name(), "DAOEmpty") //DAO was upgraded
 
         })
-        */
     })
 
-    /*
     describe("stake", () => {
         it("reverts if gov is not approved to transfer", async () => {
             await expectRevert(gov.stake(ether("50")), "ERC20: transfer amount exceeds allowance")
@@ -890,6 +914,5 @@ contract("DAOUpgradable", async (accounts) => {
             assert.equal((balanceAfter.sub(balanceBefore)).toString(), (ether("5")).toString())
         })
     })
-    */
 
 })

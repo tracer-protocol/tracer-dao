@@ -112,7 +112,7 @@ contract TracerMultisigDAO is Initializable {
         quorumDivisor = _quorumDivisor;
     }
 
-    function initializeMultisig(address _multisig) public {
+    function initializeMultisig(address _multisig) external {
         require(!multisigInitialized, "DAO: Multisig address already initialized");
         multisigInitialized = true;
         multisig = _multisig;
@@ -316,7 +316,7 @@ contract TracerMultisigDAO is Initializable {
      * @dev Since the snapshot vote will end when the on-chain Proposal ends, we do not
      *      disallow execution if proposal has expired
      */
-    function _multisigVote(uint256 proposalId, bool voteSuccess) private {
+    function _multisigVote(uint256 proposalId, bool voteSuccess) public onlyMultisig() {
         Proposal storage proposal = proposals[proposalId];
         require(proposal.state != ProposalState.EXECUTED, "DAO: Proposal already executed");
         require(
