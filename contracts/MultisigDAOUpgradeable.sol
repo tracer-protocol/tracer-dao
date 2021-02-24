@@ -74,6 +74,18 @@ contract TracerMultisigDAO is Initializable {
         mapping(address => uint256) stakerTokensVoted;
     }
 
+    mapping(address => Stake) public stakers;
+    mapping(uint256 => Proposal) public proposals;
+
+    event ProposalCreated(uint256 proposalId);
+    event ProposalPassed(uint256 proposalId);
+    event ProposalRejected(uint256 proposalId);
+    event TargetExecuted(uint256 proposalId, address target, bytes returnData);
+    event ProposalExecuted(uint256 proposalId);
+    event UserVote(address voter, bool side, uint256 proposalId, uint96 amount);
+    event UserStake(address staker, uint96 amount);
+    event UserWithdraw(address staker, uint96 amount);
+
     enum MultisigProposalState {INITIATED, EXECUTED, CANCELLED, FAILED}
 
     struct MultisigProposal {
@@ -90,22 +102,13 @@ contract TracerMultisigDAO is Initializable {
         bytes[] proposalData;
     }
 
-    mapping(address => Stake) public stakers;
-    mapping(uint256 => Proposal) public proposals;
-
     /* Multisig variables */
     address public multisig;
     mapping(uint256 => MultisigProposal) public multisigProposals;
     uint256 public multisigProposalCounter;
+    bool private multisigInitialized = false;
 
-    event ProposalCreated(uint256 proposalId);
-    event ProposalPassed(uint256 proposalId);
-    event ProposalRejected(uint256 proposalId);
-    event TargetExecuted(uint256 proposalId, address target, bytes returnData);
-    event ProposalExecuted(uint256 proposalId);
-    event UserVote(address voter, bool side, uint256 proposalId, uint96 amount);
-    event UserStake(address staker, uint96 amount);
-    event UserWithdraw(address staker, uint96 amount);
+    event SetMultisig(address multisig);
 
     function initialize(
         address _govToken,
@@ -126,7 +129,13 @@ contract TracerMultisigDAO is Initializable {
         lockDuration = _lockDuration;
         proposalThreshold = _proposalThreshold;
         quorumDivisor = _quorumDivisor;
+    }
+
+    function initializeMultisig(address _multisig) public {
+        require(!multisigInitialized, "DAO: Multisig address already initialized");
+        multisigInitialized = true;
         multisig = _multisig;
+        emit SetMultisig(multisig);
     }
 
     /**
@@ -212,31 +221,6 @@ contract TracerMultisigDAO is Initializable {
         multisigProposalCounter += 1;
     }
     
-    /**
-     * @notice Executes a proposal that was submitted by the multisig
-     */
-    function multisigExecute(uint256 multisigProposalId) external {
-        MultisigProposal memory proposal = multisigProposals[multisigProposalId];
-        require(
-            block.timestamp > proposal.executeTime,
-            "DAO: Multisig proposal start time not passed"
-        );
-
-        multisigProposals[multisigProposalId].state = MultisigProposalState.EXECUTED;
-
-        for (uint256 i = 0; i < proposal.targets.length; i++) {
-            (bool success, bytes memory data) =
-                proposal.targets[i].call(
-                    proposal.proposalData[i]
-                );
-            require(success, "DAO: Failed target execution");
-            emit TargetExecuted(
-                multisigProposalId,
-                proposal.targets[i],
-                data
-            );
-        }
-    }
 
     /**
      * @notice Proposes a function execution on a contract by the governance contract.
@@ -370,6 +354,43 @@ contract TracerMultisigDAO is Initializable {
             }
         }
         emit UserVote(msg.sender, userVote, proposalId, amount);
+    }
+
+    function multisigVoteFor(uint256 proposalId) external onlyMultisig() {
+        _multisigVote(proposalId, true);
+    }
+
+    function multisigVoteAgainst(uint256 proposalId) external onlyMultisig() {
+        _multisigVote(proposalId, false);
+    }
+
+    /**
+     * @notice The multisig's decision allows for instant execution of a proposal
+     * @dev Since the snapshot vote will end when the on-chain Proposal ends, we do not
+     *      disallow execution if proposal has expired
+     */
+    function _multisigVote(uint256 proposalId, bool success) private {
+        Proposal storage proposal = proposals[proposalId];
+        require(proposal.state != ProposalState.EXECUTED, "DAO: Proposal already executed");
+        require(proposal.state != ProposalState.REJECTED, "DAO: Proposal rejected");
+        require(
+            proposals[proposalId].startTime < block.timestamp,
+            "DAO: Proposal warming up"
+        );
+        proposal.state = ProposalState.EXECUTED;
+
+        for (uint256 i = 0; i < proposal.targets.length; i++) {
+            (bool success, bytes memory data) =
+                proposal.targets[i].call(
+                    proposal.proposalData[i]
+                );
+            require(success, "DAO: Failed target execution");
+            emit TargetExecuted(
+                multisigProposalId,
+                proposal.targets[i],
+                data
+            );
+        }
     }
 
     /**
