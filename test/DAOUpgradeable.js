@@ -10,8 +10,9 @@ const Vesting = artifacts.require("TokenVesting")
 
 contract("DAOUpgradable", async (accounts) => {
     const day = 86400
-    const threeDays = 259200
-    const twoDays = 172800
+    const twoDays = day * 2
+    const threeDays = day * 3
+    const sixDays = day * 6
 
     let daoImpl;
     let daoMockImpl;
@@ -114,7 +115,43 @@ contract("DAOUpgradable", async (accounts) => {
             multisigDaoImpl = await MultisigDAOUpgradeable.new()
             multisigProxy = await SelfUpgradeableProxy.new(multisigDaoImpl.address, govInitData)
             multisigGov = await MultisigDAOUpgradeable.at(multisigProxy.address)
-            await multisigGov.initializeMultisig(accounts[1]);
+            await multisigGov.initializeMultisig(accounts[1], sixDays);
+        })
+        it("Reverts if proposal is still warming up", async () => {
+            await govToken.approve(multisigGov.address, ether("50"))
+            await multisigGov.stake(ether("50"))
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData])
+            await expectRevert(multisigGov.multisigVoteFor(0, { from: accounts[1] }), "DAO: Proposal warming up");
+        })
+
+        it("Reverts if proposal has already been executed", async () => {
+            await govToken.approve(multisigGov.address, ether("100"))
+            await multisigGov.stake(ether("100"))
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData])
+            await time.increase(twoDays + 1);
+            await multisigGov.multisigVoteFor(0, { from: accounts[1] })
+            assert.equal(1, await multisigGov.coolingOff())
+            await expectRevert(multisigGov.multisigVoteFor(0, { from: accounts[1] }), "DAO: Proposal already executed")
+        })
+
+        it("Reverts if proposal is rejected", async () => {
+            await govToken.approve(multisigGov.address, ether("50"))
+            await multisigGov.stake(ether("50"))
+            await govToken.approve(multisigGov.address, ether("100"), { from: accounts[2] })
+            await multisigGov.stake(ether("100"), { from: accounts[2] })
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData])
+            await time.increase(twoDays + 1)
+            await multisigGov.vote(0, false, ether("100"), { from: accounts[2] })
+            await time.increase(sixDays * 2)
+            await expectRevert(multisigGov.multisigVoteFor(0, { from: accounts[1] }), "DAO: Proposal rejected");
+        })
+
+        it("Reverts if multisig votes after deadline", async () => {
+            await govToken.approve(multisigGov.address, ether("100"))
+            await multisigGov.stake(ether("100"))
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData])
+            await time.increase(sixDays * 2)
+            await expectRevert(multisigGov.multisigVoteFor(0, { from: accounts[1] }), "DAO: Proposal's multisig deadline has passed");
         })
 
         it("Allows for multisig to execute proposals", async () => {
@@ -122,7 +159,7 @@ contract("DAOUpgradable", async (accounts) => {
             await multisigGov.stake(ether("100"))
             await multisigGov.propose([multisigGov.address], [setCoolingOffData])
             await time.increase(twoDays + 1)
-            await multisigGov._multisigVote(0, true, { from: accounts[1] })
+            await multisigGov.multisigVoteFor(0, { from: accounts[1] })
             assert.equal(1, await multisigGov.coolingOff())
         })
 
@@ -130,8 +167,8 @@ contract("DAOUpgradable", async (accounts) => {
             await govToken.approve(multisigGov.address, ether("100"))
             await multisigGov.stake(ether("100"))
             await multisigGov.propose([multisigGov.address], [setCoolingOffData])
-            await time.increase(twoDays * 30);
-            await multisigGov._multisigVote(0, true, { from: accounts[1] })
+            await time.increase(day * 5);
+            await multisigGov.multisigVoteFor(0, { from: accounts[1] })
             assert.equal(1, await multisigGov.coolingOff())
         })
     })
@@ -170,10 +207,11 @@ contract("DAOUpgradable", async (accounts) => {
                     name: "initializeMultisig",
                     type: "function",
                     inputs: [
-                        { type: "address", name: "_multisig" }
+                        { type: "address", name: "_multisig" },
+                        { type: "uint256", name: "_multisigDeadline" }
                     ],
                 },
-                [accounts[1]]
+                [accounts[1], sixDays]
             )
 
             multisigDaoImpl = await MultisigDAOUpgradeable.new()
@@ -193,8 +231,8 @@ contract("DAOUpgradable", async (accounts) => {
             await govMock.execute(0);
 
             const multisigDao = await MultisigDAOUpgradeable.at(proxy.address)
-            await multisigDao.initializeMultisig(accounts[1]);
-            await expectRevert(multisigDao.initializeMultisig(accounts[2]), "DAO: Multisig address already initialized");
+            await multisigDao.initializeMultisig(accounts[1], sixDays);
+            await expectRevert(multisigDao.initializeMultisig(accounts[2], sixDays), "DAO: Multisig address already initialized");
             await new Promise(r => setTimeout(r, 2000));
 
             assert.equal(await multisigDao.name(), "MultisigDAOUpgradeable")

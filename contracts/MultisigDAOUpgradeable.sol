@@ -88,9 +88,13 @@ contract TracerMultisigDAO is Initializable {
 
     /* Multisig variables */
     address public multisig;
+    // How long the multisig has to execute a proposal from proposal inception
+    uint256 multisigDeadline;
     bool private multisigInitialized = false;
 
+    event InitializeMultisig(address multisig, uint256 multisigDeadline);
     event SetMultisig(address multisig);
+    event SetMultisigDeadline(uint256 multisigDeadline);
 
     function initialize(
         address _govToken,
@@ -112,11 +116,12 @@ contract TracerMultisigDAO is Initializable {
         quorumDivisor = _quorumDivisor;
     }
 
-    function initializeMultisig(address _multisig) external {
+    function initializeMultisig(address _multisig, uint256 _multisigDeadline) external {
         require(!multisigInitialized, "DAO: Multisig address already initialized");
         multisigInitialized = true;
         multisig = _multisig;
-        emit SetMultisig(multisig);
+        multisigDeadline = _multisigDeadline;
+        emit InitializeMultisig(multisig, multisigDeadline);
     }
 
     /**
@@ -316,19 +321,27 @@ contract TracerMultisigDAO is Initializable {
      * @dev Since the snapshot vote will end when the on-chain Proposal ends, we do not
      *      disallow execution if proposal has expired
      */
-    function _multisigVote(uint256 proposalId, bool voteSuccess) public onlyMultisig() {
-        Proposal storage proposal = proposals[proposalId];
+    function _multisigVote(uint256 proposalId, bool voteSuccess) private onlyMultisig() {
+        Proposal memory proposal = proposals[proposalId];
         require(proposal.state != ProposalState.EXECUTED, "DAO: Proposal already executed");
         require(
-            proposals[proposalId].startTime < block.timestamp,
+            proposal.startTime < block.timestamp,
             "DAO: Proposal warming up"
         );
         if (!voteSuccess) {
             proposal.state = ProposalState.REJECTED;
             return;
         }
-        require(proposal.state != ProposalState.REJECTED, "DAO: Proposal rejected");
-        proposal.state = ProposalState.EXECUTED;
+        require(
+            proposal.state != ProposalState.REJECTED,
+            "DAO: Proposal rejected"
+        );
+        require(
+            proposal.startTime.add(multisigDeadline) >= block.timestamp,
+            "DAO: Proposal's multisig deadline has passed"
+        );
+
+        proposals[proposalId].state = ProposalState.EXECUTED;
 
         for (uint256 i = 0; i < proposal.targets.length; i++) {
             (bool success, bytes memory data) =
@@ -411,6 +424,15 @@ contract TracerMultisigDAO is Initializable {
     function setMultisig(address newMultisig) public onlyGov() {
         multisig = newMultisig;
         emit SetMultisig(multisig);
+    }
+
+    /**
+     * @notice Sets the multisig deadline
+     * @param newMultisigDeadline the new multisig deadline.
+     */
+    function setMultisigDeadline(uint256 newMultisigDeadline) public onlyGov() {
+        multisigDeadline = newMultisigDeadline;
+        emit SetMultisigDeadline(multisigDeadline);
     }
 
     /**
