@@ -72,6 +72,8 @@ contract TracerMultisigDAO is Initializable {
         // The list of the call datas for each individual function call
         bytes[] proposalData;
         mapping(address => uint256) stakerTokensVoted;
+        // Is the multisig allowed to determine this proposal's result?
+        bool allowMultisig;
     }
 
     mapping(address => Stake) public stakers;
@@ -89,12 +91,9 @@ contract TracerMultisigDAO is Initializable {
     /* Multisig variables */
     address public multisig;
     // How long the multisig has to execute a proposal from proposal inception
-    uint256 multisigDeadline;
-    bool private multisigInitialized = false;
+    bool public multisigInitialized = false;
 
-    event InitializeMultisig(address multisig, uint256 multisigDeadline);
     event SetMultisig(address multisig);
-    event SetMultisigDeadline(uint256 multisigDeadline);
 
     function initialize(
         address _govToken,
@@ -116,12 +115,11 @@ contract TracerMultisigDAO is Initializable {
         quorumDivisor = _quorumDivisor;
     }
 
-    function initializeMultisig(address _multisig, uint256 _multisigDeadline) external {
+    function initializeMultisig(address _multisig) external {
         require(!multisigInitialized, "DAO: Multisig address already initialized");
         multisigInitialized = true;
         multisig = _multisig;
-        multisigDeadline = _multisigDeadline;
-        emit InitializeMultisig(multisig, multisigDeadline);
+        emit SetMultisig(multisig);
     }
 
     /**
@@ -180,9 +178,9 @@ contract TracerMultisigDAO is Initializable {
      * @param  proposalData ABI encoded data containing the function signature and parameters to be
      *         executed as part of this proposal.
      */
-    function propose(address[] memory targets, bytes[] memory proposalData)
+    function propose(address[] memory targets, bytes[] memory proposalData, bool _allowMultisig)
         public
-        onlyStaker()
+        onlyMultisigOrStaker()
     {
         uint96 userStaked = getStaked(msg.sender);
         require(
@@ -207,7 +205,8 @@ contract TracerMultisigDAO is Initializable {
                 uint256(proposalDuration).add(warmUp)
             ),
             passTime: 0,
-            state: ProposalState.PROPOSED
+            state: ProposalState.PROPOSED,
+            allowMultisig: _allowMultisig
         });
         proposals[proposalCounter].stakerTokensVoted[msg.sender] = userStaked;
         emit ProposalCreated(proposalCounter);
@@ -323,6 +322,7 @@ contract TracerMultisigDAO is Initializable {
      */
     function _multisigVote(uint256 proposalId, bool voteSuccess) private onlyMultisig() {
         Proposal memory proposal = proposals[proposalId];
+        require(proposal.allowMultisig, "DAO: Proposal does not allow multisig");
         require(proposal.state != ProposalState.EXECUTED, "DAO: Proposal already executed");
         require(
             proposal.startTime < block.timestamp,
@@ -337,8 +337,9 @@ contract TracerMultisigDAO is Initializable {
             "DAO: Proposal rejected"
         );
         require(
-            proposal.startTime.add(multisigDeadline) >= block.timestamp,
-            "DAO: Proposal's multisig deadline has passed"
+            // The current time must be before the cooling off period ends
+            block.timestamp < proposal.expiryTime.add(coolingOff),
+            "DAO: Multisig's deadline has passed"
         );
 
         proposals[proposalId].state = ProposalState.EXECUTED;
@@ -427,15 +428,6 @@ contract TracerMultisigDAO is Initializable {
     }
 
     /**
-     * @notice Sets the multisig deadline
-     * @param newMultisigDeadline the new multisig deadline.
-     */
-    function setMultisigDeadline(uint256 newMultisigDeadline) public onlyGov() {
-        multisigDeadline = newMultisigDeadline;
-        emit SetMultisigDeadline(multisigDeadline);
-    }
-
-    /**
      * @notice Emergency ERC20 withdraw.
      */
     function withdrawERC20(
@@ -480,6 +472,14 @@ contract TracerMultisigDAO is Initializable {
      */
     modifier onlyMultisig() {
         require(msg.sender == multisig, "DAO: Caller not multisig");
+        _;
+    }
+
+    /**
+     * @dev reverts if caller is not the multisig wallet or a staker.
+     */
+    modifier onlyMultisigOrStaker() {
+        require(msg.sender == multisig || getStaked(msg.sender) > 0, "DAO: Caller not multisig or staker");
         _;
     }
 }
