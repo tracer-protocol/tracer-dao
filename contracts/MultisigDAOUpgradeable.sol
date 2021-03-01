@@ -91,7 +91,7 @@ contract TracerMultisigDAO is Initializable {
     /* Multisig variables */
     address public multisig;
     // How long the multisig has to execute a proposal from proposal inception
-    bool public multisigInitialized = false;
+    bool public multisigInitialized;
 
     event SetMultisig(address multisig);
 

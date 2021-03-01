@@ -7,6 +7,7 @@ const DAOMock = artifacts.require("DAOMock")
 const MultisigDAOUpgradeable = artifacts.require("TracerMultisigDAO")
 const SelfUpgradeableProxy = artifacts.require("CustomUpgradeableProxy")
 const Vesting = artifacts.require("TokenVesting")
+const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 
 contract("DAOUpgradable", async (accounts) => {
     const day = 86400
@@ -128,6 +129,34 @@ contract("DAOUpgradable", async (accounts) => {
     })
 
     describe("Multisig functionality", () => {
+        it("Deploys and upgrades", async () => {
+            const instance = await deployProxy(
+                DAOUpgradeable,
+                [
+                    govToken.address,
+                    10,
+                    2*day,
+                    2*day,
+                    3*day,
+                    7*day,
+                    ether("1"),
+                    2
+                ],
+                { initializer: "initialize" }
+            );
+
+            instancev2 = await upgradeProxy(instance.address, MultisigDAOUpgradeable)
+            await instancev2.initializeMultisig(accounts[1])
+            await govToken.approve(instance.address, ether("100"))
+            await instancev2.stake(ether("100"))
+            await instancev2.propose([instance.address], [setCoolingOffData], true)
+            await time.increase(twoDays + 1);
+            await instancev2.multisigVoteFor(0, { from: accounts[1] })
+            assert.equal(1, await instancev2.coolingOff())
+        })
+    })
+
+    describe("Multisig functionality", () => {
         beforeEach(async () => {
             multisigDaoImpl = await MultisigDAOUpgradeable.new()
             multisigProxy = await SelfUpgradeableProxy.new(multisigDaoImpl.address, govInitData)
@@ -198,8 +227,6 @@ contract("DAOUpgradable", async (accounts) => {
     })
 
     describe("Multisig end-to-end", () => {
-        beforeEach(async () => {
-        })
         it("Can operate a complete end-to-end", async () => {
             multisigDaoImpl = await MultisigDAOUpgradeable.new()
             // Initialize multisig before it gets approved, should be wiped on upgrade
@@ -249,9 +276,18 @@ contract("DAOUpgradable", async (accounts) => {
             await time.increase(twoDays + 1)
             await multisigGov.multisigVoteFor(1, { from: accounts[1] })
             assert.equal(1234, await multisigGov.proposalThreshold())
+
+            await expectRevert(multisigGov.multisigVoteFor(1, { from: accounts[1] }), "DAO: Proposal already executed")
+
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData], true)
+            await expectRevert(multisigGov.multisigVoteFor(2, { from: accounts[1] }), "DAO: Proposal warming up");
+
+            /*
+            await multisigGov.propose([multisigGov.address], [setCoolingOffData], false)
+            await expectRevert(multisigGov.multisigVoteFor(2, { from: accounts[1] }), "DAO: Proposal does not allow multisig");
+            */
         })
     })
-    /*
 
     describe("upgradeTo()", () => {
         it("DAOMock", async () => {
@@ -1018,6 +1054,5 @@ contract("DAOUpgradable", async (accounts) => {
             assert.equal((balanceAfter.sub(balanceBefore)).toString(), (ether("5")).toString())
         })
     })
-    */
 
 })
