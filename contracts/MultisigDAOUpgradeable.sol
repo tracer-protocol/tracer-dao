@@ -167,10 +167,6 @@ contract TracerMultisigDAO is Initializable {
         emit UserWithdraw(msg.sender, amount);
     }
 
-    function name() external pure returns (string memory) {
-        return "MultisigDAOUpgradeable";
-    }
-    
 
     /**
      * @notice Proposes a function execution on a contract by the governance contract.
