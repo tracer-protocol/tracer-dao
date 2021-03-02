@@ -25,3 +25,6 @@ An initial linear vesting contract with a 6 month cliff and a total vesting peri
 | `TCR`                      | https://etherscan.io/address/0x9C4A4204B79dd291D6b6571C5BE8BbcD0622F050 |
 | `Claim`                    | https://etherscan.io/address/0x2Ad3cf980eB7Cd382ebaf12C7C8D995bfEa17A11 |
 | `Vesting`                  | https://etherscan.io/address/0x2B79E11984514Ece5B2Db561F49c0466cC7659EA |
+
+### Running Tests
+For compatibility with OpenZeppelin's upgrade functions, run `truffle compile --all && truffle test` to run the tests.

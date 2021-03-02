@@ -123,7 +123,7 @@ contract TracerMultisigDAO is Initializable {
     }
 
     function name() external pure returns (string memory) {
-        return "MultisigDaoUpgradeable";
+        return "MultisigDAOUpgradeable";
     }
 
     /**
