@@ -122,6 +122,10 @@ contract TracerMultisigDAO is Initializable {
         emit SetMultisig(multisig);
     }
 
+    function name() external pure returns (string memory) {
+        return "MultisigDaoUpgradeable";
+    }
+
     /**
      * @notice Payable fallback to accept ETH payments.
      */
