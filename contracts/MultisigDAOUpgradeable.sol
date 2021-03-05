@@ -184,7 +184,7 @@ contract TracerMultisigDAO is Initializable {
     {
         uint96 userStaked = getStaked(msg.sender);
         require(
-            userStaked >= proposalThreshold,
+            userStaked >= proposalThreshold || msg.sender == multisig,
             "DAO: staked amount < threshold"
         );
         require(targets.length != 0, "DAO: 0 targets");
