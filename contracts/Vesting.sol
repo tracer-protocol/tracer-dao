@@ -6,8 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/SignedSafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IVesting.sol";
 
-contract TokenVesting is Ownable {
+contract TokenVesting is Ownable, IVesting {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -21,8 +22,12 @@ contract TokenVesting is Ownable {
         bool cliffClaimed;
     }
 
-    mapping(address => bool) isVesting;
-    mapping(address => Schedule) schedules;
+    struct UserSchedule {
+        uint256 numberOfSchedules;
+        mapping (uint256 => Schedule) schedules; 
+    }
+
+    mapping(address => UserSchedule) userSchedules;
     uint256 locked;
     IERC20 TCR;
     uint SAFE_MUL = 10e18;
@@ -40,36 +45,43 @@ contract TokenVesting is Ownable {
     *                the cliff period.
     * @param amount the amount of tokens being vested for the user.
     * @param isFixed a flag for if the vesting schedule is fixed or not. Fixed vesting schedules can't be cancelled.
+    * @param cliffWeeks the number of weeks that the cliff will be present at.
+    * @param vestingWeeks the number of weeks the tokens will vest over (linearly)
     */
     function setVestingSchedule(
         address account,
         uint256 amount,
-        bool isFixed
-    ) public onlyOwner {
+        bool isFixed,
+        uint256 cliffWeeks,
+        uint256 vestingWeeks
+    ) public override onlyOwner {
         require(
             TCR.balanceOf(address(this)).sub(locked) >= amount,
             "Vesting: amount > tokens leftover"
         );
-        isVesting[account] = true;
-        schedules[account] = Schedule(
+        require(
+            vestingWeeks >= cliffWeeks,
+            "Vesting: cliff after vesting period"
+        );
+        UserSchedule storage userSchedule = userSchedules[account];
+        userSchedule.schedules[userSchedule.numberOfSchedules] = Schedule(
             amount,
             0,
             block.timestamp,
-            block.timestamp.add(26 * 1 weeks), // cliff after 6 months
-            block.timestamp.add(156 * 1 weeks), // total vesting time of 3 years from start
+            block.timestamp.add(cliffWeeks * 1 weeks),
+            block.timestamp.add(vestingWeeks * 1 weeks),
             isFixed,
             false
         );
-
+        userSchedule.numberOfSchedules++;
         locked = locked.add(amount);
     }
 
     /**
     * @notice allows users to claim vested tokens if the cliff time has passed.
     */
-    function claim() public {
-        require(isVesting[msg.sender], "Vesting: Not vesting");
-        Schedule storage schedule = schedules[msg.sender];
+    function claim(uint256 scheduleNumber) public override {
+        Schedule storage schedule = userSchedules[msg.sender].schedules[scheduleNumber];
         require(
             schedule.cliffTime <= block.timestamp,
             "Vesting: cliffTime not reached"
@@ -92,27 +104,26 @@ contract TokenVesting is Ownable {
     * @dev Any outstanding tokens are returned to the system.
     * @param account the account of the user whos vesting schedule is being cancelled.
     */
-    function cancelVesting(address account) public onlyOwner {
-        require(isVesting[account], "Vesting: Caller not vesting");
-        Schedule storage schedule = schedules[account];
+    function cancelVesting(address account, uint256 scheduleId) public override onlyOwner {
+        Schedule storage schedule = userSchedules[account].schedules[scheduleId];
         require(schedule.claimedAmount < schedule.totalAmount, "Vesting: Tokens fully claimed");
         require(!schedule.isFixed, "Vesting: Account is fixed");
         uint256 outstandingAmount = schedule.totalAmount.sub(schedule.claimedAmount);
         schedule.totalAmount = 0;
         locked = locked.sub(outstandingAmount);
-        isVesting[account] = false;
     }
 
     /**
     * @notice returns the total amount and total claimed amount of a users vesting schedule.
     * @param account the user to retrieve the vesting schedule for.
     */
-    function getVesting(address account)
+    function getVesting(address account, uint256 scheduleId)
         public
+        override
         view
         returns (uint256, uint256)
     {
-        Schedule memory schedule = schedules[account];
+        Schedule memory schedule = userSchedules[account].schedules[scheduleId];
         return (schedule.totalAmount, schedule.claimedAmount);
     }
 
@@ -124,7 +135,7 @@ contract TokenVesting is Ownable {
     * @param startTime the timestamp this vesting schedule started.
     * @param endTime the timestamp this vesting schedule ends.
     */
-    function calcDistribution(uint amount, uint currentTime, uint startTime, uint endTime) public pure returns(uint256) {
+    function calcDistribution(uint amount, uint currentTime, uint startTime, uint endTime) public override pure returns(uint256) {
         return amount.mul(currentTime.sub(startTime)).div(endTime.sub(startTime));
     }
 
