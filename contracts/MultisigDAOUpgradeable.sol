@@ -41,6 +41,7 @@ contract TracerMultisigDAO is Initializable {
     uint32 public lockDuration; // time tokens are not withdrawable after voting or proposing
     // specifies the maximum number of targets each given proposal can have
     uint32 public maxProposalTargets;
+    // specifies the minimum amount staked that an account must have in order to make a proposal
     uint96 public proposalThreshold;
     uint256 public totalStaked;
     uint256 internal proposalCounter;
