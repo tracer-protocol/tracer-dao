@@ -74,16 +74,16 @@ contract('E2E', (accounts) => {
 
                 //Cant claim any yet
                 await expectRevert(
-                    vesting.claim({from: accounts[1]}),
+                    vesting.claim(0, {from: accounts[1]}),
                     "Vesting: cliffTime not reached"
                 )
 
                 //Can claim half after 1.5 years
                 time.increase(78*7*24*60*60)
-                await vesting.claim({from:accounts[1]})
+                await vesting.claim(0, {from:accounts[1]})
 
                 let newBalance = await tcr.balanceOf(accounts[1])
-                let newVesting = await vesting.getVesting(accounts[1])
+                let newVesting = await vesting.getVesting(accounts[1], 0)
 
                 //1 token + 0.5 * 99999 tokens = 50000.5 tokens
                 const expectedBalance = new BN(web3.utils.toWei("50000.5"))

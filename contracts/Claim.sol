@@ -57,7 +57,7 @@ contract InitialClaim {
         _token.safeTransfer(msg.sender, singleToken);
         _token.safeTransfer(address(_vesting), vestingTokens);
         //Setup fixed vesting. This can't be cancelled
-        _vesting.setVestingSchedule(msg.sender, vestingTokens, true);
+        _vesting.setVestingSchedule(msg.sender, vestingTokens, true, 26, 156);
         //Mark user as claimed
         claimed[msg.sender] = true;
     }

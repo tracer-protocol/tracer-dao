@@ -54,16 +54,16 @@ contract('Claim', (accounts) => {
                 await tcr.transfer(claim.address, web3.utils.toWei('100000'))
                 await claim.claimTokens({from: accounts[1]})
 
-                let vestingSchedule = await vesting.getVesting(accounts[1])
+                let vestingSchedule = await vesting.getVesting(accounts[1], 0)
                 assert.equal(vestingSchedule[0].toString(), web3.utils.toWei("99999"))
                 assert.equal(vestingSchedule[1].toString(), web3.utils.toWei("0"))
 
                 // Can claim their vesting
                 let startBalance = await tcr.balanceOf(accounts[1])
                 time.increase(39 * 7 * 24 * 60 * 60)
-                await vesting.claim({ from: accounts[1] })
+                await vesting.claim(0, { from: accounts[1] })
                 let endBalance = await tcr.balanceOf(accounts[1])
-                let claimed = await vesting.getVesting(accounts[1])
+                let claimed = await vesting.getVesting(accounts[1], 0)
                 assert.equal(claimed[0].toString(), await web3.utils.toWei('99999'))
                 //13 weeks over = 1/4 of the total
                 assert.equal(claimed[1].toString().slice(0, 7), await web3.utils.toWei('24999.75').toString().slice(0, 7))
