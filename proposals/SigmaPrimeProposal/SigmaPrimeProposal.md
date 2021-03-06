@@ -1,10 +1,10 @@
 # Sigma Prime Offer
 
-The Tracer DAO is proposing to engage with Sigma Prime for an audit on the Tracer protocol code - the codebase implementation is as detailed in the specifications outlined in the [Perpetual Swap Whitepaper](https://tracer.finance).
+The Tracer DAO is considering engaging Sigma Prime for an audit of Tracer’s code.
 
-This process will be a month long process in which Sigma Prime will detail any errors with the Tracer Perpetual Swap codebase and initial factory smart contract implementation. Sigma Prime are a very reputable auditing agency, and if given this contract will begin to perform their service as of the 15th of March. The Lion’s Mane team would be working with Sigma Prime throughout the month period to fix any bugs and help them to navigate and understand the codebase. This initiative is in line with the details outlined in the initial Tracer Whitepaper (LINK), suggesting that the DAO should adhere to tight security standards in relation to any deployed smart contracts. 
+This audit will likely be a month long process, during which Sigma Prime will detail any errors found with the Tracer Perpetual Swap codebase and initial factory smart contract implementation. Sigma Prime are a preeminent auditing team, and, if engaged by the Tracer DAO, will commence work on 15 March 2021. The Lion’s Mane team would work with Sigma Prime throughout the audit to fix any bugs and help them to navigate and understand the codebase.
 
-The current Perpetual Swap codebase can be found here: [Lion's Mane Github](https://github.com/lions-mane).
+This initiative aligns with the Tracer Whitepaper, where it is suggested that the Tracer DAO should adhere to strict security standards in relation to smart contracts within the Tracer ecosystem.
 
 ## Remuneration
 
@@ -14,7 +14,7 @@ The current Perpetual Swap codebase can be found here: [Lion's Mane Github](http
 
 ## Deliverables
 
-If Sigma Prime is engaged by by a DAO Proposal to provide the services described in this Offer to the DAO, it will provide the services outlined in the consultancy agreement
+If Sigma Prime is engaged by by a DAO Proposal to provide the services described in this Offer to the DAO, it will provide the services outlined in the [consultancy agreement](https://github.com/lions-mane/tracer-dao/blob/sigmaprime-proposal/proposals/SigmaPrimeProposal/Sigma_Prime_Tracer_DAO_Consultancy_Agreement.pdf)
 
 ## Technical Implementation of Proposal
 
