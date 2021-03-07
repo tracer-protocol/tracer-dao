@@ -4,7 +4,7 @@ The Tracer DAO is considering engaging Sigma Prime for an audit of Tracer’s co
 
 This audit will likely be a month long process, during which Sigma Prime will detail any errors found with the Tracer Perpetual Swap codebase and initial factory smart contract implementation. Sigma Prime are a preeminent auditing team, and, if engaged by the Tracer DAO, will commence work on 15 March 2021. The Lion’s Mane team would work with Sigma Prime throughout the audit to fix any bugs and help them to navigate and understand the codebase.
 
-This initiative aligns with the Tracer Whitepaper, where it is suggested that the Tracer DAO should adhere to strict security standards in relation to smart contracts within the Tracer ecosystem.
+The current Perpetual Swap codebase can be found [here](https://github.com/lions-mane/tracer-protocol).
 
 ## Remuneration
 
