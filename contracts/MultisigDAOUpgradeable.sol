@@ -75,6 +75,8 @@ contract TracerMultisigDAO is Initializable {
         mapping(address => uint256) stakerTokensVoted;
         // Is the multisig allowed to determine this proposal's result?
         bool allowMultisig;
+        // URI for proposal data
+        string proposalURI;
     }
 
     mapping(address => Stake) public stakers;
@@ -179,7 +181,12 @@ contract TracerMultisigDAO is Initializable {
      * @param  proposalData ABI encoded data containing the function signature and parameters to be
      *         executed as part of this proposal.
      */
-    function propose(address[] memory targets, bytes[] memory proposalData, bool _allowMultisig)
+    function propose(
+        address[] memory targets,
+        bytes[] memory proposalData,
+        bool _allowMultisig,
+        string memory _proposalURI
+    )
         public
         onlyMultisigOrStaker()
     {
@@ -207,9 +214,11 @@ contract TracerMultisigDAO is Initializable {
             ),
             passTime: 0,
             state: ProposalState.PROPOSED,
-            allowMultisig: _allowMultisig
+            allowMultisig: _allowMultisig,
+            proposalURI: _proposalURI
         });
         proposals[proposalCounter].stakerTokensVoted[msg.sender] = userStaked;
+        emit UserVote(msg.sender, true, proposalCounter, userStaked);
         emit ProposalCreated(proposalCounter);
         proposalCounter += 1;
     }
@@ -287,6 +296,7 @@ contract TracerMultisigDAO is Initializable {
             .add(amount);
 
         uint96 votes;
+        emit UserVote(msg.sender, userVote, proposalId, amount);
         if (userVote) {
             votes = proposals[proposalId].yes.add96(uint96(amount));
             proposals[proposalId].yes = votes;
@@ -305,7 +315,6 @@ contract TracerMultisigDAO is Initializable {
                 emit ProposalRejected(proposalId);
             }
         }
-        emit UserVote(msg.sender, userVote, proposalId, amount);
     }
 
     function multisigVoteFor(uint256 proposalId) external onlyMultisig() {
@@ -357,6 +366,10 @@ contract TracerMultisigDAO is Initializable {
                 data
             );
         }
+    }
+
+    function getProposalURI(uint256 proposalId) public view returns (string memory) {
+        return proposals[proposalId].proposalURI;
     }
 
     /**

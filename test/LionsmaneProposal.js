@@ -234,7 +234,8 @@ contract('E2E Proposals', (accounts) => {
                 const difference2 = postClaim2.sub(preClaim2)
                 assert(
                     difference2 > expectedDifference2.sub(epsilon) &&
-                    difference2 < expectedDifference2.add(epsilon)
+                    difference2 < expectedDifference2.add(epsilon),
+                    "Difference out of range"
                 )
 
                 //At the end of the 3 years, all tokens are claimable
@@ -247,7 +248,8 @@ contract('E2E Proposals', (accounts) => {
                 const difference3 = postClaim3.sub(preClaim3)
                 assert(
                     difference3 > expectedDifference3.sub(epsilon) &&
-                    difference3 < expectedDifference3.add(epsilon)
+                    difference3 < expectedDifference3.add(epsilon),
+                    "Difference out of range"
                 )
 
                 let finalBalance = await tcr.balanceOf(lionsmaneMultisig)
