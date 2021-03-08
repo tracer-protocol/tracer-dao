@@ -69,7 +69,7 @@ contract('E2E', (accounts) => {
                 assert.equal(endBalance.toString(), (web3.utils.toWei('1')).toString())
 
                 //Check amount vesting
-                let userVesting = await vesting.getVesting(accounts[1])
+                let userVesting = await vesting.getVesting(accounts[1], 0)
                 assert.equal(userVesting[0].toString(), (initialVesting).toString()) //99999 tokens vesting
 
                 //Cant claim any yet
