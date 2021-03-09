@@ -97,6 +97,7 @@ contract TracerMultisigDAO is Initializable {
     bool public multisigInitialized;
 
     event SetMultisig(address multisig);
+    event MultisigVote(uint256 proposalId);
 
     function initialize(
         address _govToken,
@@ -352,6 +353,7 @@ contract TracerMultisigDAO is Initializable {
             "DAO: Multisig's deadline has passed"
         );
 
+        emit MultisigVote(proposalId);
         proposals[proposalId].state = ProposalState.EXECUTED;
 
         for (uint256 i = 0; i < proposal.targets.length; i++) {

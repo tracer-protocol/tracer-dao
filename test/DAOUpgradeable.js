@@ -297,6 +297,7 @@ contract("DAOUpgradable", async (accounts) => {
             await gov.execute(currentProposalId);
 
             const multisigDao = await MultisigDAOUpgradeable.at(proxy.address)
+            await expectRevert(multisigDao.setCoolingOff(123), "DAO: Caller not governance")
 
             // Check to make sure data was saved from original DAO
             assert.equal(10, await multisigGov.maxProposalTargets())
