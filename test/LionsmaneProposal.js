@@ -7,7 +7,7 @@ const { BN, expectRevert, time } = require('@openzeppelin/test-helpers');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 const { assert } = require('chai');
 
-contract('E2E', (accounts) => {
+contract('E2E Proposals', (accounts) => {
     const day = 86400
 
     let tcr, vesting, claim, gov, proxy
@@ -212,25 +212,45 @@ contract('E2E', (accounts) => {
                 //Fast forward 6 months (26 weeks = 182 days) and run two claims
                 time.increase(182 * day)
                 
+                const epsilon = new BN(web3.utils.toWei("2"))
+
                 //All 32,250,000 tokens should now be claimable
+                const expectedDifference1 = new BN(web3.utils.toWei("32250000"))
                 let preClaim1 = await tcr.balanceOf(lionsmaneMultisig)
                 await vesting.claim(0, {from: lionsmaneMultisig})
                 let postClaim1 = await tcr.balanceOf(lionsmaneMultisig)
-                assert.equal(postClaim1.sub(preClaim1).toString(), web3.utils.toWei("32250000"))
+                const difference1 = postClaim1.sub(preClaim1)
+                assert(
+                    difference1 > expectedDifference1.sub(epsilon) &&
+                    difference1 < expectedDifference1.add(epsilon),
+                    "Difference out of range"
+                )
 
                 //1/6th of the 161,250,000 tokens should be claimable = 26875000
+                const expectedDifference2 = new BN(web3.utils.toWei("26875000"))
                 let preClaim2 = await tcr.balanceOf(lionsmaneMultisig)
                 await vesting.claim(1, {from: lionsmaneMultisig})
                 let postClaim2 = await tcr.balanceOf(lionsmaneMultisig)
-                assert.equal(postClaim2.sub(preClaim2).toString(), web3.utils.toWei("26875000"))
+                const difference2 = postClaim2.sub(preClaim2)
+                assert(
+                    difference2 > expectedDifference2.sub(epsilon) &&
+                    difference2 < expectedDifference2.add(epsilon),
+                    "Difference out of range"
+                )
 
                 //At the end of the 3 years, all tokens are claimable
                 //fast forward 2.5 years = 130 weeks
+                const expectedDifference3 = new BN(web3.utils.toWei("134375000"))
                 await time.increase(130 * 7 * day)
                 let preClaim3 = await tcr.balanceOf(lionsmaneMultisig)
                 await vesting.claim(1, {from: lionsmaneMultisig})
                 let postClaim3 = await tcr.balanceOf(lionsmaneMultisig)
-                assert.equal(postClaim3.sub(preClaim3).toString(), web3.utils.toWei("134375000"))
+                const difference3 = postClaim3.sub(preClaim3)
+                assert(
+                    difference3 > expectedDifference3.sub(epsilon) &&
+                    difference3 < expectedDifference3.add(epsilon),
+                    "Difference out of range"
+                )
 
                 let finalBalance = await tcr.balanceOf(lionsmaneMultisig)
                 assert.equal(finalBalance.toString(), web3.utils.toWei("215000000"))

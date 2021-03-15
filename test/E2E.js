@@ -61,6 +61,7 @@ contract('E2E', (accounts) => {
     describe('Claim Flow', () => {
         context('Users can claim tokens, receive 1 and part goes to vesting', async () => {
             it('works', async() => {
+                const initialVesting = new BN(web3.utils.toWei('99999'))
                 let startBalance = await tcr.balanceOf(accounts[1])
                 assert.equal(startBalance.toString(), (web3.utils.toWei('0')).toString())
                 await claim.claimTokens({from: accounts[1]})
@@ -69,7 +70,7 @@ contract('E2E', (accounts) => {
 
                 //Check amount vesting
                 let userVesting = await vesting.getVesting(accounts[1], 0)
-                assert.equal(userVesting[0].toString(), (web3.utils.toWei('99999')).toString()) //99999 tokens vesting
+                assert.equal(userVesting[0].toString(), (initialVesting).toString()) //99999 tokens vesting
 
                 //Cant claim any yet
                 await expectRevert(
@@ -85,9 +86,21 @@ contract('E2E', (accounts) => {
                 let newVesting = await vesting.getVesting(accounts[1], 0)
 
                 //1 token + 0.5 * 99999 tokens = 50000.5 tokens
-                assert.equal(newBalance.toString().slice(0, 7), (web3.utils.toWei('50000.5').toString().slice(0, 7)))
-                //claimed 49.5, got 1 from the start
-                assert.equal(newVesting[1].toString().slice(0, 7), (web3.utils.toWei('49999.5').toString().slice(0, 7)))
+                const expectedBalance = new BN(web3.utils.toWei("50000.5"))
+                const epsilon = new BN(web3.utils.toWei("0.0025"))
+
+                /* newBalance should be within a certain interval.
+                   The exact amount can vary slightly */
+                assert(
+                    newBalance > expectedBalance.sub(epsilon) &&
+                    newBalance < expectedBalance.add(epsilon),
+                    newBalance.toString()
+                )
+
+                /* The newVesting should be whatever newBalance is 
+                   minus the original 1 token from the start of vesting */
+                const expectedVesting = (newBalance.sub(new BN(web3.utils.toWei("1"))))
+                assert.equal(newVesting[1].toString(), expectedVesting.toString())
             })
         })
     })
