@@ -8,7 +8,7 @@ The current Perpetual Swap codebase can be found [here](https://github.com/lions
 
 ## Remuneration
 
-1. Sigma Prime has requested for 112050 USDC to be transferred immediately to pay for the audit. Sigma Prime Ethereum Address: 0x9CE6e6E4D9C9d6163258Db90a4AAB86ef4d1F7D5
+1. Sigma Prime has requested for 112050 USDT to be transferred immediately to pay for the audit. Sigma Prime Ethereum Address: 0x9CE6e6E4D9C9d6163258Db90a4AAB86ef4d1F7D5
 
 2. No on-going payments will be made for the service.
 
@@ -22,15 +22,15 @@ In order for Sigma Prime to be engaged to provide the services described in the 
 
 The steps that the DAO must execute in order to appoint Lion’s Mane are as follows:
 
-Transfer 112050 USDC tokens to Sigma Prime (0x9CE6e6E4D9C9d6163258Db90a4AAB86ef4d1F7D5).
+Transfer 112050 USDT tokens to Sigma Prime (0x9CE6e6E4D9C9d6163258Db90a4AAB86ef4d1F7D5).
 
 The following is the data that must be passed to the DAO, via Proposal, as well as the relevant raw data in order to verify the correctness of the Proposal data.
 
 ### Step 1
 
-Name: Transfer 112050 USDC tokens to Sigma Prime\
-Target: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 (USDC Token Address)\
-proposalData: 0xa9059cbb0000000000000000000000009ce6e6e4d9c9d6163258db90a4aab86ef4d1f7d50000000000000000000000000000000000000000000017ba3e1fb5a817880000\
+Name: Transfer 112050 USDT tokens to Sigma Prime\
+Target: 0xdAC17F958D2ee523a2206206994597C13D831ec7 (USDT Token Address)\
+proposalData: 0xa9059cbb0000000000000000000000009ce6e6e4d9c9d6163258db90a4aab86ef4d1f7d50000000000000000000000000000000000000000000000000000001a16b35080\
 raw data: 
 - Function: transfer
 - Parameters:
@@ -39,4 +39,4 @@ raw data:
     - Value: 0x9CE6e6E4D9C9d6163258Db90a4AAB86ef4d1F7D5
     - Type: uint256
     - Name: amount
-    - Value: 112050000000000000000000
+    - Value: 112050000000
