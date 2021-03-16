@@ -152,7 +152,6 @@ contract("DAOUpgradable", async (accounts) => {
         gov = await DAOUpgradeable.at(proxy.address)
     })
 
-    /*
     describe("Multisig upgradeability", () => {
         it("Deploys and upgrades", async () => {
             const instance = await deployProxy(
@@ -274,6 +273,8 @@ contract("DAOUpgradable", async (accounts) => {
     })
 
     describe("Multisig end-to-end", () => {
+        it("Keeps data from before upgrade", async () => {
+        })
         it("Can operate a complete end-to-end", async () => {
             await govToken.approve(gov.address, ether("100"))
             await govToken.approve(gov.address, ether("100"), { from: accounts[1] })
@@ -428,7 +429,6 @@ contract("DAOUpgradable", async (accounts) => {
 
         })
     })
-    */
 
     describe("Multisig data storage", () => {
         it("Can keep data about a proposal that exists during upgade", async () => {
