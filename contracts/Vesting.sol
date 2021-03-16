@@ -27,10 +27,9 @@ contract TokenVesting is Ownable, IVesting {
         mapping (uint256 => Schedule) schedules; 
     }
 
-    mapping(address => UserSchedule) userSchedules;
-    uint256 locked;
-    IERC20 TCR;
-    uint SAFE_MUL = 10e18;
+    mapping(address => UserSchedule) public userSchedules;
+    uint256 public locked;
+    IERC20 private TCR;
 
     event Claim(uint amount, address claimer);
 
