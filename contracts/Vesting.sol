@@ -28,7 +28,7 @@ contract TokenVesting is Ownable, IVesting {
     }
 
     mapping(address => UserSchedule) public userSchedules;
-    uint256 public locked;
+    uint256 public valueLocked;
     IERC20 private TCR;
 
     event Claim(uint amount, address claimer);
@@ -55,7 +55,7 @@ contract TokenVesting is Ownable, IVesting {
         uint256 vestingWeeks
     ) public override onlyOwner {
         require(
-            TCR.balanceOf(address(this)).sub(locked) >= amount,
+            TCR.balanceOf(address(this)).sub(valueLocked) >= amount,
             "Vesting: amount > tokens leftover"
         );
         require(
@@ -73,7 +73,7 @@ contract TokenVesting is Ownable, IVesting {
             false
         );
         userSchedule.numberOfSchedules++;
-        locked = locked.add(amount);
+        valueLocked = valueLocked.add(amount);
     }
 
     /**
@@ -109,7 +109,7 @@ contract TokenVesting is Ownable, IVesting {
         require(!schedule.isFixed, "Vesting: Account is fixed");
         uint256 outstandingAmount = schedule.totalAmount.sub(schedule.claimedAmount);
         schedule.totalAmount = 0;
-        locked = locked.sub(outstandingAmount);
+        valueLocked = valueLocked.sub(outstandingAmount);
     }
 
     /**
@@ -144,7 +144,7 @@ contract TokenVesting is Ownable, IVesting {
     */
     function withdraw(uint amount) public onlyOwner {
         require(
-            TCR.balanceOf(address(this)).sub(locked) >= amount,
+            TCR.balanceOf(address(this)).sub(valueLocked) >= amount,
             "Vesting: amount > tokens leftover"
         );
         TCR.safeTransfer(owner(), amount);
