@@ -22,12 +22,9 @@ contract TokenVesting is Ownable, IVesting {
         bool cliffClaimed;
     }
 
-    struct UserSchedule {
-        uint256 numberOfSchedules;
-        mapping (uint256 => Schedule) schedules; 
-    }
+    mapping (address => mapping(uint => Schedule)) public schedules;
+    mapping (address => uint) public numberOfSchedules;
 
-    mapping(address => UserSchedule) public userSchedules;
     uint256 public valueLocked;
     IERC20 private TCR;
 
@@ -62,8 +59,7 @@ contract TokenVesting is Ownable, IVesting {
             vestingWeeks >= cliffWeeks,
             "Vesting: cliff after vesting period"
         );
-        UserSchedule storage userSchedule = userSchedules[account];
-        userSchedule.schedules[userSchedule.numberOfSchedules] = Schedule(
+        schedules[account][numberOfSchedules[account]] = Schedule(
             amount,
             0,
             block.timestamp,
@@ -72,7 +68,7 @@ contract TokenVesting is Ownable, IVesting {
             isFixed,
             false
         );
-        userSchedule.numberOfSchedules++;
+        numberOfSchedules[account] = numberOfSchedules[account]++;
         valueLocked = valueLocked.add(amount);
     }
 
@@ -80,7 +76,7 @@ contract TokenVesting is Ownable, IVesting {
     * @notice allows users to claim vested tokens if the cliff time has passed.
     */
     function claim(uint256 scheduleNumber) public override {
-        Schedule storage schedule = userSchedules[msg.sender].schedules[scheduleNumber];
+        Schedule storage schedule = schedules[msg.sender][scheduleNumber];
         require(
             schedule.cliffTime <= block.timestamp,
             "Vesting: cliffTime not reached"
@@ -104,7 +100,7 @@ contract TokenVesting is Ownable, IVesting {
     * @param account the account of the user whos vesting schedule is being cancelled.
     */
     function cancelVesting(address account, uint256 scheduleId) public override onlyOwner {
-        Schedule storage schedule = userSchedules[account].schedules[scheduleId];
+        Schedule storage schedule = schedules[account][scheduleId];
         require(schedule.claimedAmount < schedule.totalAmount, "Vesting: Tokens fully claimed");
         require(!schedule.isFixed, "Vesting: Account is fixed");
         uint256 outstandingAmount = schedule.totalAmount.sub(schedule.claimedAmount);
@@ -122,7 +118,7 @@ contract TokenVesting is Ownable, IVesting {
         view
         returns (uint256, uint256)
     {
-        Schedule memory schedule = userSchedules[account].schedules[scheduleId];
+        Schedule memory schedule = schedules[account][scheduleId];
         return (schedule.totalAmount, schedule.claimedAmount);
     }
 
