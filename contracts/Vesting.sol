@@ -59,7 +59,8 @@ contract TokenVesting is Ownable, IVesting {
             vestingWeeks >= cliffWeeks,
             "Vesting: cliff after vesting period"
         );
-        schedules[account][numberOfSchedules[account]] = Schedule(
+        uint256 currentNumSchedules = numberOfSchedules[account];
+        schedules[account][currentNumSchedules] = Schedule(
             amount,
             0,
             block.timestamp,
@@ -68,7 +69,7 @@ contract TokenVesting is Ownable, IVesting {
             isFixed,
             false
         );
-        numberOfSchedules[account] = numberOfSchedules[account] + 1;
+        numberOfSchedules[account] = currentNumSchedules + 1;
         valueLocked = valueLocked.add(amount);
     }
 
