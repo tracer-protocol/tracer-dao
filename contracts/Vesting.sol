@@ -68,7 +68,7 @@ contract TokenVesting is Ownable, IVesting {
             isFixed,
             false
         );
-        numberOfSchedules[account] = numberOfSchedules[account]++;
+        numberOfSchedules[account] = numberOfSchedules[account] + 1;
         valueLocked = valueLocked.add(amount);
     }
 
