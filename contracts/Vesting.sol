@@ -139,7 +139,7 @@ contract TokenVesting is Ownable, IVesting {
     * @notice Withdraws TCR tokens from the contract.
     * @dev blocks withdrawing locked tokens.
     */
-    function withdraw(uint amount) public onlyOwner {
+    function withdraw(uint amount) public override onlyOwner {
         require(
             TCR.balanceOf(address(this)).sub(valueLocked) >= amount,
             "Vesting: amount > tokens leftover"
