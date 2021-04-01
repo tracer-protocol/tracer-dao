@@ -53,4 +53,10 @@ interface IVesting {
         uint256 startTime,
         uint256 endTime
     ) external pure returns (uint256);
+
+    /**
+    * @notice Withdraws TCR tokens from the contract.
+    * @dev blocks withdrawing locked tokens.
+    */
+    function withdraw(uint amount) external;
 }
