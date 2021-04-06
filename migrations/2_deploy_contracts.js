@@ -56,14 +56,14 @@ module.exports = async function(deployer, network, accounts) {
     // 1% of 1 billion = 10 million
     await tcr.transfer(claim.address, web3.utils.toWei('10000000'))
     
-
     if (network == 'development') {
         console.log("Creating test vestings")
         // create a few test vesting schedules
         await tcr.transfer(vesting.address, web3.utils.toWei('10000000'))
 
         // no cliff 156 weeks vesting
-        await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('2500000'), true, 0, 156);
+        await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('2000000'), true, 0, 156);
+        await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('500000'), true, 24, 156);
 
         // cliff at 26 weeks, 52 weeks vesting steeper gradient
         await vesting.setVestingSchedule(accounts[2], web3.utils.toWei('5000000'), true, 26, 52);
@@ -71,8 +71,9 @@ module.exports = async function(deployer, network, accounts) {
         // cliff at 52 weeks, 156 weeks vesting 
         await vesting.setVestingSchedule(accounts[3], web3.utils.toWei('2500000'), true, 52, 156);
         console.log("Finished creating test vestings")
+        await tcr.transfer(accounts[0], web3.utils.toWei('10000000'))
         console.log("Transferring remaining tokens to DAO")
-        await tcr.transfer(proxy.address, web3.utils.toWei('980000000'))
+        await tcr.transfer(proxy.address, web3.utils.toWei('970000000'))
 
     } else {
         // Send 99% of tokens to gov contract
