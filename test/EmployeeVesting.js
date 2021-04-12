@@ -261,20 +261,6 @@ contract('EmployeeVesting', (accounts) => {
                 let tokensAfter = await tcr.balanceOf(accounts[1])
                 assert.equal(tokensAfter.sub(tokensBefore).toString().slice(0, 6), web3.utils.toWei('100').toString().slice(0, 6))
             })
-            it('Allows the user to vest from the contract with insufficient tokens', async () => {
-                await tcr.transfer(vesting.address, web3.utils.toWei('50'))
-                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('100'), true, 26, 26);
-
-                time.increase(26 * 7 * 24 * 60 * 60)
-                let tokensBefore = await tcr.balanceOf(accounts[1])
-
-                await tcr.transfer(vesting.address, web3.utils.toWei('50'))
-                await vesting.claim(0, { from: accounts[1] })
-                let claimed = await vesting.getVesting(accounts[1], 0)
-                assert.equal(claimed[0].toString(), await web3.utils.toWei('100'))
-                let tokensAfter = await tcr.balanceOf(accounts[1])
-                assert.equal(tokensAfter.sub(tokensBefore).toString().slice(0, 6), web3.utils.toWei('100').toString().slice(0, 6))
-            })
         })
     })
     describe('cancel', () => {
@@ -355,6 +341,25 @@ contract('EmployeeVesting', (accounts) => {
                     vesting.withdraw(web3.utils.toWei("2")),
                     "Vesting: amount > tokens leftover"
                 )
+            })
+        })
+
+        context('setDAO', async () => {
+            context('when called by owner', async() => {
+                it('succeeds', async() => {
+                    await vesting.setDAOAddress(accounts[1])
+                    let dao = await vesting.DAO()
+                    assert.equal(dao, accounts[1])
+                })
+            })
+
+            context('when called by non owner', async() => {
+                it('succeeds', async() => {
+                    await expectRevert(
+                        vesting.setDAOAddress(accounts[1], { from: accounts[1]}),
+                        "Ownable: caller is not the owner"
+                    )
+                })
             })
         })
     })
