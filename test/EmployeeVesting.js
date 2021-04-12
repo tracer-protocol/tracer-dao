@@ -1,6 +1,5 @@
-const DAO = artifacts.require("TracerDAO");
 const TCR = artifacts.require("TracerToken");
-const EmployeeVesting = artifacts.require("TokenVesting")
+const EmployeeVesting = artifacts.require("EmployeeVesting")
 const { BN, expectRevert, time } = require('@openzeppelin/test-helpers');
 const { web3 } = require('@openzeppelin/test-helpers/src/setup');
 const { assert } = require('chai');
@@ -13,7 +12,8 @@ contract('EmployeeVesting', (accounts) => {
     let tcr, vesting
     beforeEach(async () => {
         tcr = await TCR.new(web3.utils.toWei('10000'), accounts[0])
-        vesting = await EmployeeVesting.new(tcr.address)
+        //set accounts 5 as the "DAO"
+        vesting = await EmployeeVesting.new(tcr.address, accounts[5])
         await tcr.transfer(vesting.address, web3.utils.toWei('5000'))
     })
 
@@ -28,18 +28,18 @@ contract('EmployeeVesting', (accounts) => {
         })
 
         context('When not enough tokens are held', () => {
-            it('fails', async () => {
-                await expectRevert(
-                    vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50000000'), true, 26, 156),
-                    `Vesting: amount > tokens leftover`
-                )
+            it('allows vesting to be set', async () => {
+                await tcr.transfer(vesting.address, web3.utils.toWei('50'))
+                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), true, 26, 156);
+                let userVesting = await vesting.getVesting(accounts[1], 0)
+                assert.equal(userVesting[0].toString(), await web3.utils.toWei('50'))
+                assert.equal(userVesting[1].toString(), await web3.utils.toWei('0'))
             })
         })
 
         context('When called by the owner with tokens', () => {
             it('Can set a vesting schedule', async () => {
                 await tcr.transfer(vesting.address, web3.utils.toWei('50'))
-
                 await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), true, 26, 156);
                 let userVesting = await vesting.getVesting(accounts[1], 0)
                 assert.equal(userVesting[0].toString(), await web3.utils.toWei('50'))
@@ -62,6 +62,30 @@ contract('EmployeeVesting', (accounts) => {
                 assert.equal(userVesting2[1].toString(), await web3.utils.toWei('0'))
             })
         })
+
+        context('When the owner create multiple vesting schedules', () => {
+            it('succeeds', async () => {
+                await tcr.transfer(vesting.address, web3.utils.toWei('150'))
+                await vesting.setVestingSchedules([accounts[1], accounts[2], accounts[3]],
+                    [web3.utils.toWei('50'), web3.utils.toWei('50'), web3.utils.toWei('50')],
+                    [true, true, true], [26, 26, 26], [156, 156, 156]);
+
+                //accounts 1
+                let userVesting = await vesting.getVesting(accounts[1], 0)
+                assert.equal(userVesting[0].toString(), await web3.utils.toWei('50'))
+                assert.equal(userVesting[1].toString(), await web3.utils.toWei('0'))
+
+                //accounts 2
+                let userVesting2 = await vesting.getVesting(accounts[2], 0)
+                assert.equal(userVesting2[0].toString(), await web3.utils.toWei('50'))
+                assert.equal(userVesting2[1].toString(), await web3.utils.toWei('0'))
+
+                //accounts 3
+                let userVesting3 = await vesting.getVesting(accounts[3], 0)
+                assert.equal(userVesting3[0].toString(), await web3.utils.toWei('50'))
+                assert.equal(userVesting3[1].toString(), await web3.utils.toWei('0'))
+            })
+        })
     })
 
     describe('claim', () => {
@@ -79,7 +103,7 @@ contract('EmployeeVesting', (accounts) => {
                 await tcr.transfer(vesting.address, web3.utils.toWei('50'))
                 await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), true, 26, 156);
                 await expectRevert(
-                    vesting.claim(0,{ from: accounts[1] }),
+                    vesting.claim(0, { from: accounts[1] }),
                     'Vesting: cliffTime not reached'
                 )
             })
@@ -94,22 +118,6 @@ contract('EmployeeVesting', (accounts) => {
                     vesting.claim(0, { from: accounts[1] }),
                     'Vesting: No claimable tokens'
                 )
-            })
-        })
-        context('When the owner create multiple vesting schedules', () => {
-            it('succeeds', async () => {
-                await tcr.transfer(vesting.address, web3.utils.toWei('150'))
-                await vesting.setVestingSchedules([accounts[1], accounts[2], accounts[3]], [web3.utils.toWei('50'), web3.utils.toWei('50'), web3.utils.toWei('50')] , [true, true, true] , [26, 26, 26], [156, 156, 156]);
-                let balance1 = await tcr.balanceOf(accounts[1])
-                let balance2 = await tcr.balanceOf(accounts[2])
-                let balance3 = await tcr.balanceOf(accounts[3])
-                time.increase(26 * 7 * 24 * 60 * 60)
-                vesting.claim(0, { from: accounts[1] }),
-                vesting.claim(0, { from: accounts[2] }),
-                vesting.claim(0, { from: accounts[3] }),
-                balance1 = await tcr.balanceOf(accounts[1])
-                balance2 = await tcr.balanceOf(accounts[2])
-                balance3 = await tcr.balanceOf(accounts[3])
             })
         })
 
@@ -189,7 +197,7 @@ contract('EmployeeVesting', (accounts) => {
                 //Increase another 6 months
                 time.increase(26 * 7 * 24 * 60 * 60)
                 let balanceBefore2 = await tcr.balanceOf(accounts[1])
-                await vesting.claim(0,{ from: accounts[1] })
+                await vesting.claim(0, { from: accounts[1] })
                 let balanceAfter2 = await tcr.balanceOf(accounts[1])
                 assert.equal(balanceAfter2.sub(balanceBefore2).toString(), web3.utils.toWei('0'))
             })
@@ -249,7 +257,7 @@ contract('EmployeeVesting', (accounts) => {
                 await vesting.claim(1, { from: accounts[1] })
                 let claimed2 = await vesting.getVesting(accounts[1], 1)
                 assert.equal(claimed2[0].toString(), await web3.utils.toWei('100'))
-                assert.equal(claimed2[1].toString().slice(0,6), await web3.utils.toWei('50').toString().slice(0,6))
+                assert.equal(claimed2[1].toString().slice(0, 6), await web3.utils.toWei('50').toString().slice(0, 6))
                 let tokensAfter = await tcr.balanceOf(accounts[1])
                 assert.equal(tokensAfter.sub(tokensBefore).toString().slice(0, 6), web3.utils.toWei('100').toString().slice(0, 6))
             })
@@ -276,7 +284,7 @@ contract('EmployeeVesting', (accounts) => {
                 await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), true, 26, 156);
 
                 await expectRevert(
-                    vesting.cancelVesting(accounts[1], 0),
+                    vesting.cancelVesting(accounts[1], 0, { from: accounts[5] }),
                     "Vesting: Account is fixed"
                 )
             })
@@ -285,7 +293,7 @@ contract('EmployeeVesting', (accounts) => {
         context('When the vesting schedule is called by owner', () => {
             it('cannot cancel', async () => {
                 await tcr.transfer(vesting.address, web3.utils.toWei('50'))
-                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), false,26, 156);
+                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), false, 26, 156);
                 //Increase to 1 years and claim
                 time.increase(78 * 7 * 24 * 60 * 60)
                 let balanceBefore = await tcr.balanceOf(accounts[1])
@@ -293,17 +301,17 @@ contract('EmployeeVesting', (accounts) => {
                 let balanceAfter = await tcr.balanceOf(accounts[1])
                 assert.equal(balanceAfter.sub(balanceBefore).toString().slice(0, 4), web3.utils.toWei('25').toString().slice(0, 4))
                 //Attempt to cancel the vesting as the owner account
-                await vesting.cancelVesting(accounts[1], 0)
-                //Try claim at end of life --> wont throw
-                time.increase(52 * 7 * 24 * 60 * 60)
-                vesting.claim(0, { from: accounts[1] }),
-                balanceAfter = await tcr.balanceOf(accounts[1])
+                await expectRevert(
+                    vesting.cancelVesting(accounts[1], 0),
+                    "Vesting: Caller not DAO"
+                )
             })
         })
+
         context('When the DAO is calling cancel vesting', () => {
-            it('Allows cancelling ',async  () => {
+            it('Allows cancelling ', async () => {
                 await tcr.transfer(vesting.address, web3.utils.toWei('50'))
-                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), false,26, 156);
+                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), false, 26, 156);
                 //Increase to 1 years and claim
                 time.increase(78 * 7 * 24 * 60 * 60)
                 let balanceBefore = await tcr.balanceOf(accounts[1])
@@ -311,20 +319,8 @@ contract('EmployeeVesting', (accounts) => {
                 let balanceAfter = await tcr.balanceOf(accounts[1])
                 assert.equal(balanceAfter.sub(balanceBefore).toString().slice(0, 4), web3.utils.toWei('25').toString().slice(0, 4))
                 //call function cancel vesting with DAO address
-                await vesting.cancelVesting(accounts[1],DAO)
+                await vesting.cancelVesting(accounts[1], 0, { from: accounts[5] })
                 //Try claiming tokens post DAO cancellation at end of life -> will cancel
-                time.increase(52 * 7 * 24 * 60 * 60)
-                await expectRevert(
-                    vesting.claim(0, { from: accounts[1] }),
-                    "Vesting: No claimable tokens"
-                )
-            })
-        })
-        context('When the owner is calling cancel vesting', () => {
-            it('Cancelling not allowed ', async () => {
-                //call function cancel vesting with DAO address
-                await vesting.cancelVesting(accounts[1],0)
-                //Try claiming tokens post DAO cancellation
                 time.increase(52 * 7 * 24 * 60 * 60)
                 await expectRevert(
                     vesting.claim(0, { from: accounts[1] }),
@@ -354,7 +350,7 @@ contract('EmployeeVesting', (accounts) => {
 
             it('Blocks withdrawing if tokens are locked', async () => {
                 //Lock up 4999 tokens
-                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('4999'), true,26, 156);
+                await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('4999'), true, 26, 156);
                 await expectRevert(
                     vesting.withdraw(web3.utils.toWei("2")),
                     "Vesting: amount > tokens leftover"
