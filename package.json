@@ -20,7 +20,7 @@
         "truffle-plugin-verify": "^0.5.4"
     },
     "scripts": {
-	"migrate:local": "truffle migrate --network=development" ,
+        "migrate:local": "truffle migrate --network=development",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "author": "",

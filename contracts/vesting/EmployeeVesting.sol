@@ -27,6 +27,7 @@ contract EmployeeVesting is Ownable, IVesting {
 
     uint256 public valueLocked;
     IERC20 private TCR;
+    address public DAO;
 
     event Claim(uint amount, address claimer);
 
@@ -34,9 +35,6 @@ contract EmployeeVesting is Ownable, IVesting {
     constructor(address tcr) public {
         TCR = IERC20(tcr);
     }
-
-    // create a setVestingSchedules function
-    // allows setting many schedules with one txn
 
     /**
     * @notice Sets up a vesting schedule for a set user.
@@ -57,10 +55,6 @@ contract EmployeeVesting is Ownable, IVesting {
     ) public override onlyOwner {
         // remove requirement for tokens to be present
         require(
-            TCR.balanceOf(address(this)).sub(valueLocked) >= amount,
-            "Vesting: amount > tokens leftover"
-        );
-        require(
             vestingWeeks >= cliffWeeks,
             "Vesting: cliff after vesting period"
         );
@@ -76,6 +70,30 @@ contract EmployeeVesting is Ownable, IVesting {
         );
         numberOfSchedules[account] = currentNumSchedules + 1;
         valueLocked = valueLocked.add(amount);
+    }
+    // create a setVestingSchedules function
+    // allows setting many schedules with one txn 
+     /**
+    * @notice Sets up vesting schedules for multiple users within 1 transaction.
+    * @dev adds a new Schedule to the schedules mapping.
+    * @param accounts an array of the accounts that the vesting schedules are being set up for.
+    *                 Will be able to claim tokens after the cliff period.               
+    * @param amount an array of the amount of tokens being vested for each user.
+    * @param isFixed an array of flags for if each users vesting schedule is fixed or not. Fixed vesting schedules can't be cancelled.
+    * @param cliffWeeks an array of the number of weeks that the users cliff will be present at.
+    * @param vestingWeeks an array of the number of weeks the each users tokens will vest over (linearly)
+    */
+    function setVestingSchedules(
+        address[] calldata accounts,
+        uint[] calldata amount,
+        bool[] calldata isFixed,
+        uint[] calldata cliffWeeks,
+        uint[] calldata vestingWeeks
+    ) public onlyOwner{
+        uint256 numberOfAccounts = accounts.length;
+        for(uint256 i=0; i<numberOfAccounts; i++){
+            setVestingSchedule(accounts[i], amount[i], isFixed[i], cliffWeeks[i], vestingWeeks[i]);
+        }
     }
 
     /**
@@ -106,7 +124,7 @@ contract EmployeeVesting is Ownable, IVesting {
     * @param account the account of the user whos vesting schedule is being cancelled.
     */
     // @todo make vesting cancellable only by DAO
-    function cancelVesting(address account, uint256 scheduleId) public override onlyOwner {
+    function cancelVesting(address account, uint256 scheduleId) public override onlyDAO {
         Schedule storage schedule = schedules[account][scheduleId];
         require(schedule.claimedAmount < schedule.totalAmount, "Vesting: Tokens fully claimed");
         require(!schedule.isFixed, "Vesting: Account is fixed");
@@ -154,5 +172,11 @@ contract EmployeeVesting is Ownable, IVesting {
     }
 
     // create an only DAO modifier
-
+    modifier onlyDAO() {
+        require(msg.sender == address(DAO));
+        _;
+    }
+    function setDAOAddress(address DAOAddress) public onlyOwner{
+        DAO = DAOAddress;
+    }
 }
