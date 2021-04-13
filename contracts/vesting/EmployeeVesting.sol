@@ -22,6 +22,7 @@ contract EmployeeVesting is Ownable, IVesting {
         bool cliffClaimed;
     }
 
+    // user => scheduleId => schedule
     mapping(address => mapping(uint256 => Schedule)) public schedules;
     mapping(address => uint256) public numberOfSchedules;
 
@@ -30,6 +31,7 @@ contract EmployeeVesting is Ownable, IVesting {
     address public DAO;
 
     event Claim(uint256 amount, address claimer);
+    event Cancelled(address account);
 
     constructor(address tcr, address dao) public {
         TCR = IERC20(tcr);
@@ -89,6 +91,13 @@ contract EmployeeVesting is Ownable, IVesting {
         uint256[] calldata vestingWeeks
     ) public onlyOwner {
         uint256 numberOfAccounts = accounts.length;
+        require(
+            amount.length == numberOfAccounts &&
+                isFixed.length == numberOfAccounts &&
+                cliffWeeks.length == numberOfAccounts &&
+                vestingWeeks.length == numberOfAccounts,
+            "Vesting: Array lengths differ"
+        );
         for (uint256 i = 0; i < numberOfAccounts; i++) {
             setVestingSchedule(
                 accounts[i],
@@ -102,6 +111,7 @@ contract EmployeeVesting is Ownable, IVesting {
 
     /**
      * @notice allows users to claim vested tokens if the cliff time has passed.
+     * @param scheduleNumber which schedule the user is claiming against
      */
     function claim(uint256 scheduleNumber) public override {
         Schedule storage schedule = schedules[msg.sender][scheduleNumber];
@@ -148,11 +158,13 @@ contract EmployeeVesting is Ownable, IVesting {
             schedule.totalAmount.sub(schedule.claimedAmount);
         schedule.totalAmount = 0;
         valueLocked = valueLocked.sub(outstandingAmount);
+        emit Cancelled(account);
     }
 
     /**
-     * @notice returns the total amount and total claimed amount of a users vesting schedule.
+     * @return returns the total amount and total claimed amount of a users vesting schedule.
      * @param account the user to retrieve the vesting schedule for.
+     * @param scheduleId the id of the schedule to view
      */
     function getVesting(address account, uint256 scheduleId)
         public
@@ -165,7 +177,7 @@ contract EmployeeVesting is Ownable, IVesting {
     }
 
     /**
-     * @notice calculates the amount of tokens to distribute to an account at any instance in time, based off some
+     * @return calculates the amount of tokens to distribute to an account at any instance in time, based off some
      *         total claimable amount.
      * @param amount the total outstanding amount to be claimed for this vesting schedule.
      * @param currentTime the current timestamp.

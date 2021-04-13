@@ -3,9 +3,46 @@ const { ether } = require("@openzeppelin/test-helpers")
 const DAOUpgradable = artifacts.require("TracerDAO")
 const TCR = artifacts.require("TracerToken");
 const Vesting = artifacts.require("TokenVesting")
+const EmployeeVesting = artifacts.require("EmployeeVesting")
 const Claim = artifacts.require("InitialClaim")
 const SelfUpgradableProxy = artifacts.require("CustomUpgradeableProxy")
 module.exports = async function(deployer, network, accounts) {
+
+    if (network == "EmployeeVesting") {
+        let tracerToken = "0x9C4A4204B79dd291D6b6571C5BE8BbcD0622F050"
+        let daoAddress = "0xA84918F3280d488EB3369Cb713Ec53cE386b6cBa"
+        let lionsmaneMultisig = "0xa6a006c12338cdcdbc882c6ab97e4f9f82340651"
+        await deployer.deploy(EmployeeVesting, tracerToken, daoAddress)
+        let employeeVesting = await EmployeeVesting.deployed()
+
+        //set vesting for current employees
+        let employeeAddresses = []
+        let amounts = []
+        let isFixed = []
+        let cliffWeeks = []
+        let vestingWeeks = []
+
+        for (var i = 0; i < employeeAddresses; i++) {
+            isFixed.push(false)
+            cliffWeeks.push(0)
+            vestingWeeks.push(156)
+        }
+
+        await employeeVesting.setVestingSchedules(
+            employeeAddresses,
+            amounts,
+            isFixed,
+            cliffWeeks,
+            vestingWeeks
+        )
+
+        //transfer ownership to the Lionsmane multisig for all future
+        //employees to have vesting set
+        await employeeVesting.transferOwnership(lionsmaneMultisig)
+        console.log(employeeVesting.address)
+        return
+    }
+
     const day = 86400
 
     // Deploy TCR token -> total supply of 1 billion tokens
