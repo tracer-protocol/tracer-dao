@@ -111,6 +111,19 @@ module.exports = async function(deployer, network, accounts) {
         console.log("Transferring remaining tokens to DAO")
         await tcr.transfer(proxy.address, web3.utils.toWei('980000000'))
 
+        const withdrawData = web3.eth.abi.encodeFunctionCall(
+            {
+                name: "withdrawFromVesting",
+                type: "function",
+                inputs: [
+                    { type: "uint256", name: "amount" },
+                ],
+            },
+            ["2599948000000000000000000"]
+        )
+        
+        console.log(withdrawData)
+
     } else {
         // Send 99% of tokens to gov contract
         // 99% of 1 billion = 990 million

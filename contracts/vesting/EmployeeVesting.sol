@@ -8,7 +8,11 @@ import "@openzeppelin/contracts/math/SignedSafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/IVesting.sol";
 
-contract EmployeeVesting is Ownable, IVesting {
+/**
+* Modified Version of the vesting contract that allows the setting of a start date,
+* and allows the DAO to control the vesting contract and cancel anyones vesting.
+*/
+contract EmployeeVesting is Ownable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -53,8 +57,9 @@ contract EmployeeVesting is Ownable, IVesting {
         uint256 amount,
         bool isFixed,
         uint256 cliffWeeks,
-        uint256 vestingWeeks
-    ) public override onlyOwner {
+        uint256 vestingWeeks,
+        uint256 startTime
+    ) public onlyOwner {
         require(
             vestingWeeks >= cliffWeeks,
             "Vesting: cliff after vesting period"
@@ -63,9 +68,9 @@ contract EmployeeVesting is Ownable, IVesting {
         schedules[account][currentNumSchedules] = Schedule(
             amount,
             0,
-            block.timestamp,
-            block.timestamp.add(cliffWeeks * 1 weeks),
-            block.timestamp.add(vestingWeeks * 1 weeks),
+            startTime,
+            startTime.add(cliffWeeks * 1 weeks),
+            startTime.add(vestingWeeks * 1 weeks),
             isFixed,
             false
         );
@@ -88,14 +93,16 @@ contract EmployeeVesting is Ownable, IVesting {
         uint256[] calldata amount,
         bool[] calldata isFixed,
         uint256[] calldata cliffWeeks,
-        uint256[] calldata vestingWeeks
+        uint256[] calldata vestingWeeks,
+        uint256[] calldata startTimes
     ) public onlyOwner {
         uint256 numberOfAccounts = accounts.length;
         require(
             amount.length == numberOfAccounts &&
                 isFixed.length == numberOfAccounts &&
                 cliffWeeks.length == numberOfAccounts &&
-                vestingWeeks.length == numberOfAccounts,
+                vestingWeeks.length == numberOfAccounts && 
+                startTimes.length == numberOfAccounts,
             "Vesting: Array lengths differ"
         );
         for (uint256 i = 0; i < numberOfAccounts; i++) {
@@ -104,7 +111,8 @@ contract EmployeeVesting is Ownable, IVesting {
                 amount[i],
                 isFixed[i],
                 cliffWeeks[i],
-                vestingWeeks[i]
+                vestingWeeks[i],
+                startTimes[i]
             );
         }
     }
@@ -113,7 +121,7 @@ contract EmployeeVesting is Ownable, IVesting {
      * @notice allows users to claim vested tokens if the cliff time has passed.
      * @param scheduleNumber which schedule the user is claiming against
      */
-    function claim(uint256 scheduleNumber) public override {
+    function claim(uint256 scheduleNumber) public {
         Schedule storage schedule = schedules[msg.sender][scheduleNumber];
         require(
             schedule.cliffTime <= block.timestamp,
@@ -145,7 +153,6 @@ contract EmployeeVesting is Ownable, IVesting {
      */
     function cancelVesting(address account, uint256 scheduleId)
         public
-        override
         onlyDAO
     {
         Schedule storage schedule = schedules[account][scheduleId];
@@ -169,7 +176,6 @@ contract EmployeeVesting is Ownable, IVesting {
     function getVesting(address account, uint256 scheduleId)
         public
         view
-        override
         returns (uint256, uint256)
     {
         Schedule memory schedule = schedules[account][scheduleId];
@@ -189,7 +195,7 @@ contract EmployeeVesting is Ownable, IVesting {
         uint256 currentTime,
         uint256 startTime,
         uint256 endTime
-    ) public pure override returns (uint256) {
+    ) public pure returns (uint256) {
         return
             amount.mul(currentTime.sub(startTime)).div(endTime.sub(startTime));
     }
@@ -198,7 +204,7 @@ contract EmployeeVesting is Ownable, IVesting {
      * @notice Withdraws TCR tokens from the contract.
      * @dev blocks withdrawing locked tokens.
      */
-    function withdraw(uint256 amount) public override onlyOwner {
+    function withdraw(uint256 amount) public onlyOwner {
         require(
             TCR.balanceOf(address(this)).sub(valueLocked) >= amount,
             "Vesting: amount > tokens leftover"
