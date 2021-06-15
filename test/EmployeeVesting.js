@@ -31,7 +31,7 @@ contract('EmployeeVesting', (accounts) => {
 
         context('When not enough tokens are held', () => {
             it('allows vesting to be set', async () => {
-                await tcr.transfer(vesting.address, web3.utils.toWei('50'))
+                await tcr.transfer(vesting.address, web3.utils.toWei('51'))
                 await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), true, 26, 156, now);
                 let userVesting = await vesting.getVesting(accounts[1], 0)
                 assert.equal(userVesting[0].toString(), await web3.utils.toWei('50'))
