@@ -31,7 +31,7 @@ contract('EmployeeVesting', (accounts) => {
 
         context('When not enough tokens are held', () => {
             it('allows vesting to be set', async () => {
-                await tcr.transfer(vesting.address, web3.utils.toWei('51'))
+                await tcr.transfer(vesting.address, web3.utils.toWei('49'))
                 await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), true, 26, 156, now);
                 let userVesting = await vesting.getVesting(accounts[1], 0)
                 assert.equal(userVesting[0].toString(), await web3.utils.toWei('50'))
@@ -261,7 +261,7 @@ contract('EmployeeVesting', (accounts) => {
                 assert.equal(claimed[1].toString(), await web3.utils.toWei('50').toString())
             })
 
-            it('With no cliff', async () => {
+            it('works with no cliff', async () => {
                 await tcr.transfer(vesting.address, web3.utils.toWei('50'))
                 await vesting.setVestingSchedule(accounts[1], web3.utils.toWei('50'), true, 0, 156, now);
                 let userVesting = await vesting.getVesting(accounts[1], 0)
