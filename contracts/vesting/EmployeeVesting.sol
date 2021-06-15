@@ -142,6 +142,7 @@ contract EmployeeVesting is Ownable {
         amount = amount > schedule.totalAmount ? schedule.totalAmount : amount;
         uint256 amountToTransfer = amount.sub(schedule.claimedAmount);
         schedule.claimedAmount = amount; // set new claimed amount based off the curve
+        valueLocked = valueLocked.sub(amountToTransfer);
         TCR.safeTransfer(msg.sender, amountToTransfer);
         emit Claim(amount, msg.sender);
     }
