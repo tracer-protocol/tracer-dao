@@ -84,7 +84,7 @@ module.exports = async function(deployer, network, accounts) {
         let cliffWeeks = []
         let vestingWeeks = []
         let startTimes = []
-        for (var i = 0; i < employeeAddresses; i++) {
+        for (var i = 0; i < employeeAddresses.length; i++) {
             isFixed.push(false)
             cliffWeeks.push(0)
             vestingWeeks.push(156)
