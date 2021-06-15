@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/math/SignedSafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./interfaces/IVesting.sol";
+import "../interfaces/IVesting.sol";
 
 contract TokenVesting is Ownable, IVesting {
     using SafeERC20 for IERC20;
