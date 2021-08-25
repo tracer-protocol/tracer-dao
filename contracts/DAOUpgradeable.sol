@@ -268,7 +268,7 @@ contract TracerDAO is Initializable {
             votes = proposals[proposalId].yes.add96(uint96(amount));
             proposals[proposalId].yes = votes;
             if (votes >= totalStaked.div(quorumDivisor)) {
-                // Quorum of 50% reached, pass the proposal
+                // Quorum is reached, pass the proposal
                 proposals[proposalId].passTime = block.timestamp;
                 proposals[proposalId].state = ProposalState.PASSED;
                 emit ProposalPassed(proposalId);
@@ -277,7 +277,7 @@ contract TracerDAO is Initializable {
             votes = proposals[proposalId].no.add96(uint96(amount));
             proposals[proposalId].no = votes;
             if (votes >= totalStaked.div(quorumDivisor)) {
-                // Quorum of 50% reached, reject the proposal
+                // Quorum is reached, reject the proposal
                 proposals[proposalId].state = ProposalState.REJECTED;
                 emit ProposalRejected(proposalId);
             }
