@@ -420,8 +420,8 @@ viii.	Any words following the terms 'including, include, in particular, for exam
 ix.	Unless the context otherwise requires, words in the singular shall include the plural and in the plural shall include the singular.
 b.	Definitions:
 i.	"Acceptance Threshold": the percentage of Governance Token votes required for a Proposal to be accepted, which is:
-1.	more than 50% of the outstanding Governance Tokens of the Tracer DAO (i.e. the absolute majority); or
-2.	more than 50% of the Governance Tokens of the Tracer DAO that votes on a Proposal during the Proposal Voting Period.
+1.	A quorum of the outstanding Governance Tokens of the Tracer DAO (i.e. the absolute majority); or
+2.	A quorum of the Governance Tokens of the Tracer DAO that votes on a Proposal during the Proposal Voting Period.
 ii.	"Agreement Termination Event": A successful proposal submitted to the Tracer DAO that the Agreement shall terminate at a specified time.
 iii.	"Consumer": a natural person, who is acting outside the scope of an economic activity and is not participating in the Tracer DAO for any household or domestic purposes.
 iv.	"DAO Protocol": a Smart Contract which gives control over the administrative and constitutional functions of the Tracer DAO, namely:
@@ -447,8 +447,8 @@ xxi.	"Proposal": a suggestion for actions to be taken by the Tracer DAO function
 xxii.	"Proposal Voting Period": The period a Proposal stays open for voting by the Tracer DAO Governance Token Holders, which is for Proposals affecting the Tracer Protocol and the DAO Protocol, 3 days;
 xxiii.	"Proposer": a person submitting a Proposal to the Tracer DAO.
 xxiv.	"Rejection Threshold": the percentage of Governance Token votes required for a Proposal to be rejected by vote (as distinguished from rejection by expiration),:
-1.	50% or more of the outstanding Governance Tokens of the Tracer DAO; or
-2.	50% or more of the Governance Tokens of the Tracer DAO that votes on a Proposal during the Proposal Voting Period.
+1.	A quorum of the outstanding Governance Tokens of the Tracer DAO; or
+2.	A quorum or more of the Governance Tokens of the Tracer DAO that votes on a Proposal during the Proposal Voting Period.
 xxv.	"Related Parties": the Service Provider's parents, subsidiaries, affiliates, assigns, transferees as well as any of their representatives, principals, agents, directors, officers, employees, consultants, contractors, members, shareholders or guarantors.
 xxvi.	"Service Provider": Any entity engaged by the Governance Mechanism to perform services for the Tracer DAO.
 xxvii.	"Smart Contract": autonomous software code that is deployed on the Ethereum Blockchain.
@@ -460,6 +460,7 @@ xxxii.	"Tracer Protocol": a Smart Contract that allows interaction with Tracer b
 xxxiii.	"Vote Interface": a graphical user interface which facilitates the use of the Governance Mechanisms during the Governance Period (including, for the avoidance of doubt, etherscan.io or a graphical user interface which is developed to facilitate the use of the Governance Mechanisms during the Governance Period).
 xxxiv.	"Wallet": an ERC20 compatible wallet through which Tracer DAO Stakeholders have access to and control of the private keys of their Ethereum-based address.
 xxxv.	"You", "Your", or "Yourself": refers, at all times, to each Tracer DAO Participant.
+xxxvi.  "Quorum": A percentage of the total Governance Tokens of the Tracer DAO required to reach agreement, determined by the TracerDAO. Set initially to 50%
 
 3.	DISTRIBUTION OF GOVERNANCE TOKENS
 a.	The Initial Governance Tokens are distributed to Participants that claim Governance Tokens from the Tracer DAO Smart Contract during the Governance Period.
