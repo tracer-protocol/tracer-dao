@@ -2,7 +2,13 @@
 The Tracer Decentralised Autonomous Organisation (DAO) maintains the Tracer Factory and services the needs of the Tracer ecosystem. Once deployed from the Factory, all financial contracts are permissionless with absolute economic and regulatory independence unless codified otherwise.
 
 ## Contracts
+### MultisigDAOUpgradeable
+An upgradeable DAO utilising a simple propose, vote and execute structure. Able to execute any abritrary action as voted on by DAO stakers.
+
+This contract also enables a multisig to execute proposals as they are voted on through Snapshot (https://snapshot.org/#/tracer.eth).
+
 ### DAOUpgradeable
+[No longer in use]
 An upgradeable DAO utilising a simple propose, vote and execute structure. Able to execute any abritrary action as voted on by DAO stakers.
 
 ### CustomUpgradeableProxy
@@ -20,8 +26,8 @@ An initial linear vesting contract with a 6 month cliff and a total vesting peri
 ## Contract Addresses
 | Contract                   | Address                                                                 |
 | :------------------------- | :---------------------------------------------------------------------: |
-| `DAOUpgradeable`           | https://etherscan.io/address/0x515f2815c950c8385c1c3c30b63adf3207aa259a |
 | `CustomUpgradeableProxy`   | https://etherscan.io/address/0xa84918f3280d488eb3369cb713ec53ce386b6cba |
+| `MultisigDAOUpgradeable`   | https://etherscan.io/address/0x3ad0a0814f5fd76be6bdc0b771df98aafd572107 |
 | `TCR`                      | https://etherscan.io/address/0x9C4A4204B79dd291D6b6571C5BE8BbcD0622F050 |
 | `Claim`                    | https://etherscan.io/address/0x2Ad3cf980eB7Cd382ebaf12C7C8D995bfEa17A11 |
 | `Vesting`                  | https://etherscan.io/address/0x2B79E11984514Ece5B2Db561F49c0466cC7659EA |
