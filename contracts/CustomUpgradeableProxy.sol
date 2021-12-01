@@ -16,6 +16,10 @@ contract CustomUpgradeableProxy is UpgradeableProxy {
         UpgradeableProxy(_logic, _data)
     {}
 
+    function getImplementation() public view returns (address) {
+        return _implementation();
+    }
+
     /**
      * @dev Upgrade the implementation of the proxy.
      *
