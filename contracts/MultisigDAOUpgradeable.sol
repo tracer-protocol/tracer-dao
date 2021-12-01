@@ -335,13 +335,10 @@ contract TracerMultisigDAO is Initializable {
         Proposal memory proposal = proposals[proposalId];
         require(proposal.allowMultisig, "DAO: Proposal does not allow multisig");
         require(proposal.state != ProposalState.EXECUTED, "DAO: Proposal already executed");
+        require(proposal.state != ProposalState.REJECTED, "DAO: Proposal already rejected");
         require(
             proposal.startTime < block.timestamp,
             "DAO: Proposal warming up"
-        );
-        require(
-            proposal.state != ProposalState.REJECTED,
-            "DAO: Proposal rejected"
         );
         require(
             // The current time must be before the cooling off period ends
