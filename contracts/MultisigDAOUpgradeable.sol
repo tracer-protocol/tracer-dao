@@ -82,7 +82,7 @@ contract TracerMultisigDAO is Initializable {
     mapping(address => Stake) public stakers;
     mapping(uint256 => Proposal) public proposals;
 
-    event ProposalCreated(uint256 proposalId);
+    event ProposalCreated(uint256 proposalId, bool allowMultisig);
     event ProposalPassed(uint256 proposalId);
     event ProposalRejected(uint256 proposalId);
     event TargetExecuted(uint256 proposalId, address target, bytes returnData);
@@ -220,7 +220,7 @@ contract TracerMultisigDAO is Initializable {
         });
         proposals[proposalCounter].stakerTokensVoted[msg.sender] = userStaked;
         emit UserVote(msg.sender, true, proposalCounter, userStaked);
-        emit ProposalCreated(proposalCounter);
+        emit ProposalCreated(proposalCounter, _allowMultisig);
         proposalCounter += 1;
     }
 
