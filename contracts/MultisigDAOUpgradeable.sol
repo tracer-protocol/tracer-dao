@@ -44,7 +44,7 @@ contract TracerMultisigDAO is Initializable {
     // specifies the minimum amount staked that an account must have in order to make a proposal
     uint96 public proposalThreshold;
     uint256 public totalStaked;
-    uint256 internal proposalCounter;
+    uint256 public proposalCounter;
     uint8 public quorumDivisor;
 
     struct Stake {
