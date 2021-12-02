@@ -261,6 +261,15 @@ contract("DAOUpgradable", async (accounts) => {
             assert.equal(1, await multisigGov.coolingOff())
         })
 
+        it("Saves multisig rejections in state", async () => {
+            await govToken.approve(multisigGov.address, ether("100"))
+            await multisigGov.stake(ether("100"))
+            await multisigGov.propose([multisigGov.address], ["0x12"], true, "")
+            await time.increase(twoDays.add(one));
+            await multisigGov.multisigVoteAgainst(0, { from: accounts[5] })
+            assert.equal(3, await MultisigDAOUpgradeable.proposals(0).state) // how to get state of proposal 0?
+        })
+
         it("Appropriately sets the URI of a proposal", async () => {
             await govToken.approve(multisigGov.address, ether("100"))
             await multisigGov.stake(ether("100"))
