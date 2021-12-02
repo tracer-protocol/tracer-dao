@@ -44,7 +44,7 @@ contract TracerMultisigDAO is Initializable {
     // specifies the minimum amount staked that an account must have in order to make a proposal
     uint96 public proposalThreshold;
     uint256 public totalStaked;
-    uint256 public proposalCounter;
+    uint256 internal proposalCounter;
     uint8 public quorumDivisor;
 
     struct Stake {
@@ -117,6 +117,10 @@ contract TracerMultisigDAO is Initializable {
         lockDuration = _lockDuration;
         proposalThreshold = _proposalThreshold;
         quorumDivisor = _quorumDivisor;
+    }
+
+    function getProposalCounter() public view returns (uint256) {
+        return proposalCounter;
     }
 
     function initializeMultisig(address _multisig) external {
