@@ -119,6 +119,10 @@ contract TracerMultisigDAO is Initializable {
         quorumDivisor = _quorumDivisor;
     }
 
+    function getProposalCounter() public view returns (uint256) {
+        return proposalCounter;
+    }
+
     function initializeMultisig(address _multisig) external {
         require(!multisigInitialized, "DAO: Multisig address already initialized");
         multisigInitialized = true;
