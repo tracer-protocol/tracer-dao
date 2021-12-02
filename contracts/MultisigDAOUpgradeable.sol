@@ -97,7 +97,7 @@ contract TracerMultisigDAO is Initializable {
     bool public multisigInitialized;
 
     event SetMultisig(address multisig);
-    event MultisigVote(uint256 proposalId);
+    event MultisigVote(uint256 proposalId, bool voteSuccess);
 
     function initialize(
         address _govToken,
@@ -335,17 +335,10 @@ contract TracerMultisigDAO is Initializable {
         Proposal memory proposal = proposals[proposalId];
         require(proposal.allowMultisig, "DAO: Proposal does not allow multisig");
         require(proposal.state != ProposalState.EXECUTED, "DAO: Proposal already executed");
+        require(proposal.state != ProposalState.REJECTED, "DAO: Proposal already rejected");
         require(
             proposal.startTime < block.timestamp,
             "DAO: Proposal warming up"
-        );
-        if (!voteSuccess) {
-            proposal.state = ProposalState.REJECTED;
-            return;
-        }
-        require(
-            proposal.state != ProposalState.REJECTED,
-            "DAO: Proposal rejected"
         );
         require(
             // The current time must be before the cooling off period ends
@@ -353,7 +346,13 @@ contract TracerMultisigDAO is Initializable {
             "DAO: Multisig's deadline has passed"
         );
 
-        emit MultisigVote(proposalId);
+        emit MultisigVote(proposalId, voteSuccess);
+
+        if (!voteSuccess) {
+            proposals[proposalId].state = ProposalState.REJECTED;
+            return;
+        }
+        
         proposals[proposalId].state = ProposalState.EXECUTED;
 
         for (uint256 i = 0; i < proposal.targets.length; i++) {
